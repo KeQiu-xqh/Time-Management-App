@@ -1,6 +1,6 @@
-# 🟣 PlanFlow - Next Gen Personal Productivity Space
+# 🟣 MyPlan - Next Gen Personal Productivity Space
 
-**PlanFlow** 是一个基于 **React + Tailwind CSS** 构建的现代化个人生产力工具。
+**MyPlan** 是一个基于 **React + Tailwind CSS** 构建的现代化个人生产力工具。
 
 它不仅仅是一个简单的待办清单，而是融合了 **GTD (Getting Things Done)**、**时间块管理 (Time Blocking)** 和 **习惯养成 (Habit Tracking)** 的全能工作台。
 
@@ -11,7 +11,7 @@
 ## ✨ 核心亮点 (Core Features)
 
 ### 1. 🎯 独特的双日期逻辑 (Do Date vs. Deadline)
-大多数 App 只有一个日期，而 PlanFlow 将其拆分为二：
+大多数 App 只有一个日期，而 MyPlan 将其拆分为二：
 *   **截止日期 (Deadline):** 任务必须完成的死线。
 *   **执行日期 (Do Date):** 你计划做这件事的那一天。
 *   **智能校验:** 当你安排的执行时间晚于死线时，系统会弹出红色警告，防止逾期风险。
@@ -88,9 +88,4 @@
 4.  推送到分支 (`git push origin feature/AmazingFeature`)
 5.  开启一个 Pull Request
 
----
 
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-```
