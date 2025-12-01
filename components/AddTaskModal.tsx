@@ -54,11 +54,31 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [deadlineStr, setDeadlineStr] = useState<string>('');
   const [isTimeSet, setIsTimeSet] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
-  const [duration, setDuration] = useState(30);
+  const [endTime, setEndTime] = useState('09:30'); // New State for End Time
   const [repeat, setRepeat] = useState<RepeatFrequency>('none');
 
   // Habit Fields
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
+
+  // --- Helpers ---
+  const parseDate = (dateStr: string) => {
+    if (!dateStr) return undefined;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  const addMinutesToTime = (time: string, minutes: number) => {
+      const [h, m] = time.split(':').map(Number);
+      const date = new Date();
+      date.setHours(h, m + minutes);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  const getDurationInMinutes = (start: string, end: string) => {
+      const [h1, m1] = start.split(':').map(Number);
+      const [h2, m2] = end.split(':').map(Number);
+      return (h2 * 60 + m2) - (h1 * 60 + m1);
+  };
 
   // --- Initialization ---
   useEffect(() => {
@@ -94,9 +114,13 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       if (task.startTime) {
           setIsTimeSet(true);
           setStartTime(task.startTime);
-          setDuration(task.duration || 30);
+          // Calculate End Time
+          const duration = task.duration || 30;
+          setEndTime(addMinutesToTime(task.startTime, duration));
       } else {
           setIsTimeSet(false);
+          setStartTime('09:00');
+          setEndTime('09:30');
       }
       setRepeat(task.repeat || 'none');
   };
@@ -115,26 +139,34 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setDeadlineStr('');
       setIsTimeSet(false);
       setStartTime('09:00');
-      setDuration(30);
+      setEndTime('09:30');
       setRepeat('none');
       setHabitFrequency('daily');
-  };
-
-  // --- Helpers ---
-  const parseDate = (dateStr: string) => {
-    if (!dateStr) return undefined;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d);
   };
 
   const doDateObj = parseDate(doDateStr);
   const deadlineObj = parseDate(deadlineStr);
   const isConflict = activeType === 'task' && doDateObj && deadlineObj && doDateObj > deadlineObj;
+  
+  // Time Validation
+  const isTimeInvalid = isTimeSet && getDurationInMinutes(startTime, endTime) <= 0;
 
   // --- Handlers ---
+  const handleStartTimeChange = (newStart: string) => {
+      const oldDuration = getDurationInMinutes(startTime, endTime);
+      setStartTime(newStart);
+      // Maintain duration
+      if (oldDuration > 0) {
+          setEndTime(addMinutesToTime(newStart, oldDuration));
+      } else {
+          setEndTime(addMinutesToTime(newStart, 30));
+      }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    if (activeType === 'task' && isTimeSet && isTimeInvalid) return; // Block invalid time
 
     const category = selectedCategoryKey ? categories[selectedCategoryKey] : undefined;
 
@@ -146,8 +178,13 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     if (activeType === 'task') {
         data.doDate = parseDate(doDateStr);
         data.deadline = parseDate(deadlineStr);
-        data.startTime = isTimeSet ? startTime : undefined;
-        data.duration = isTimeSet ? duration : undefined;
+        if (isTimeSet) {
+            data.startTime = startTime;
+            data.duration = getDurationInMinutes(startTime, endTime);
+        } else {
+            data.startTime = undefined;
+            data.duration = undefined;
+        }
         data.repeat = repeat;
     } else {
         data.frequency = habitFrequency;
@@ -317,29 +354,32 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     {isTimeSet && (
                         <div className="grid grid-cols-2 gap-4 animate-fade-in">
                             <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1.5">开始时间</label>
-                            <input 
-                                type="time" 
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:border-app-primary outline-none"
-                            />
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">开始时间</label>
+                                <input 
+                                    type="time" 
+                                    value={startTime}
+                                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:border-app-primary outline-none"
+                                />
                             </div>
                             <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1.5">持续时长</label>
-                            <select
-                                value={duration}
-                                onChange={(e) => setDuration(Number(e.target.value))}
-                                className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm focus:border-app-primary outline-none"
-                            >
-                                <option value={15}>15 分钟</option>
-                                <option value={30}>30 分钟</option>
-                                <option value={60}>1 小时</option>
-                                <option value={90}>1.5 小时</option>
-                                <option value={120}>2 小时</option>
-                                <option value={180}>3 小时</option>
-                            </select>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">结束时间</label>
+                                <input 
+                                    type="time" 
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    className={`w-full px-3 py-2 rounded-lg bg-white border text-sm focus:border-app-primary outline-none ${
+                                        isTimeInvalid ? 'border-red-300 text-red-500 bg-red-50' : 'border-gray-200'
+                                    }`}
+                                />
                             </div>
+                        </div>
+                    )}
+                    
+                    {isTimeSet && isTimeInvalid && (
+                        <div className="mt-2 text-xs text-red-500 font-bold flex items-center gap-1">
+                            <AlertTriangle size={12} />
+                            结束时间必须晚于开始时间
                         </div>
                     )}
                 </div>

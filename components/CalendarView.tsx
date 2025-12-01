@@ -89,6 +89,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   // --- Drag & Drop Handlers ---
+  const resetDragState = () => {
+      setIsDragOverBacklog(false);
+  };
+
   const handleDragStart = (e: React.DragEvent, id: string, type: 'backlog' | 'timeline' | 'habit') => {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('application/json', JSON.stringify({ id, type }));
@@ -102,6 +106,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // 1. Drop on Day Timeline
   const handleDropOnDayTimeline = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
+      resetDragState();
       const dataStr = e.dataTransfer.getData('application/json');
       if (!dataStr) return;
       
@@ -124,6 +129,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // 2. Drop on Week Timeline
   const handleDropOnWeekTimeline = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
+      resetDragState();
       const dataStr = e.dataTransfer.getData('application/json');
       if (!dataStr) return;
 
@@ -163,6 +169,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // 3. Drop on All Day (Day View)
   const handleDropOnAllDay = (e: React.DragEvent) => {
       e.preventDefault();
+      resetDragState();
       const dataStr = e.dataTransfer.getData('application/json');
       if (!dataStr) return;
 
@@ -179,6 +186,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // 4. Drop on All Day (Week View)
   const handleDropOnWeekAllDay = (e: React.DragEvent, dayIndex: number) => {
       e.preventDefault();
+      resetDragState();
       const dataStr = e.dataTransfer.getData('application/json');
       if (!dataStr) return;
 
@@ -208,7 +216,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleBacklogDrop = (e: React.DragEvent) => {
       e.preventDefault();
-      setIsDragOverBacklog(false);
+      resetDragState();
       const dataStr = e.dataTransfer.getData('application/json');
       if (!dataStr) return;
 
@@ -346,6 +354,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 key={t.id} 
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, t.id, 'habit')}
+                                onDragEnd={resetDragState}
                                 className={`group relative px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
                                     t.isCompleted ? 'bg-orange-50 text-orange-400 border-orange-100' : 'bg-white border-orange-200 text-gray-700'
                                 }`}
@@ -374,6 +383,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             key={t.id} 
                             draggable
                             onDragStart={(e) => handleDragStart(e, t.id, 'timeline')}
+                            onDragEnd={resetDragState}
                             onClick={() => onEditTask(t)}
                             className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer hover:shadow-md transition-all active:opacity-50 active:cursor-grabbing ${
                                 t.isCompleted ? 'bg-gray-100 text-gray-400 border-transparent' : 'bg-white border-gray-200 text-gray-700 cursor-grab'
@@ -433,6 +443,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                       onDragStart={(e) => {
                                           handleDragStart(e, t.id, 'timeline');
                                       }}
+                                      onDragEnd={resetDragState}
                                       onClick={(e) => {
                                           e.stopPropagation();
                                           onEditTask(t);
@@ -501,6 +512,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                             key={t.id} 
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, t.id, 'timeline')}
+                                            onDragEnd={resetDragState}
                                             onClick={() => onEditTask(t)}
                                             className={`truncate text-[9px] px-1 py-0.5 rounded border ${t.isCompleted ? 'bg-gray-100 text-gray-400' : 'bg-white border-gray-200'} cursor-grab`}
                                         >
@@ -576,6 +588,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           key={t.id}
                                           draggable
                                           onDragStart={(e) => handleDragStart(e, t.id, 'timeline')}
+                                          onDragEnd={resetDragState}
                                           onClick={(e) => { e.stopPropagation(); onEditTask(t); }}
                                           className={`absolute rounded-md border-l-4 p-1 shadow-sm hover:z-30 hover:shadow-md transition-all overflow-hidden cursor-grab active:cursor-grabbing text-[10px] leading-tight group
                                             ${t.category ? t.category.colorBg.replace('bg-', 'bg-opacity-20 bg-') : 'bg-gray-100'} 
@@ -872,6 +885,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 key={task.id} 
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, task.id, 'backlog')}
+                                onDragEnd={resetDragState}
                                 className="group bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-start gap-3 relative overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60"
                             >
                                 <button 
