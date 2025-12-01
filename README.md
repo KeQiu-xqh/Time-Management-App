@@ -49,7 +49,7 @@
   1. 你可以在习惯页面/分类页面/日程页面创建习惯
   2. 习惯页面可以看到热力图，可以自行补签
   3. 日程页面也可以直接打卡
-  <img width="703" height="771" alt="Image" src="https://github.com/user-attachments/assets/072f0cd5-7e5c-4c90-b09e-4a2408265731" />
+  <img width="500" height="550" alt="Image" src="https://github.com/user-attachments/assets/072f0cd5-7e5c-4c90-b09e-4a2408265731" />
   <img width="1468" height="542" alt="Image" src="https://github.com/user-attachments/assets/66e44698-89fe-455a-a567-41a8ae3a2878" />
   <img width="1457" height="659" alt="Image" src="https://github.com/user-attachments/assets/d464af5a-f5d9-4681-a9fc-661965a12457" />
     
