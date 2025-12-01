@@ -19,10 +19,7 @@ const dateReviver = (key: string, value: any) => {
   return value;
 };
 
-const DEFAULT_CATEGORIES: Record<string, Category> = {
-  WORK: { id: 'c_work', name: '工作', colorBg: 'bg-blue-100', colorText: 'text-blue-600' },
-  LIFE: { id: 'c_life', name: '生活', colorBg: 'bg-green-100', colorText: 'text-green-600' },
-};
+const DEFAULT_CATEGORIES: Record<string, Category> = {};
 
 const App: React.FC = () => {
   // --- 1. Centralized State Management ---
@@ -401,6 +398,26 @@ const App: React.FC = () => {
     });
   };
 
+  const handleEditCategory = (id: string, name: string, colorBg: string, colorText: string) => {
+      const updatedCat: Category = { id, name, colorBg, colorText };
+      
+      // 1. Update Categories
+      setCategories(prev => ({
+          ...prev,
+          [id]: updatedCat
+      }));
+
+      // 2. Update Tasks (if they hold a copy)
+      setTasks(prev => prev.map(t => 
+          t.category?.id === id ? { ...t, category: updatedCat } : t
+      ));
+
+      // 3. Update Habits (if they hold a copy)
+      setHabits(prev => prev.map(h => 
+          h.category?.id === id ? { ...h, category: updatedCat } : h
+      ));
+  };
+
   // --- 5. Render Router ---
   const renderContent = () => {
     switch (activeTab) {
@@ -447,6 +464,7 @@ const App: React.FC = () => {
             onToggleTask={handleToggleTask}
             onAddCategory={handleAddCategory} 
             onDeleteCategory={handleDeleteCategory}
+            onEditCategory={handleEditCategory}
             onEditTask={handleOpenEditTask}
             onEditHabit={handleOpenEditHabit}
             onOpenCreator={handleOpenCreator}

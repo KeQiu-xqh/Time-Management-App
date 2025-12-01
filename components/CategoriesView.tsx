@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Category, Task, Habit } from '../types';
 import { CATEGORY_COLORS } from '../constants';
 import { TaskCard } from './TaskCard';
-import { Layers, Plus, Trash2, Search, RefreshCw, Flame } from 'lucide-react';
+import { Layers, Plus, Trash2, Search, RefreshCw, Flame, Pencil } from 'lucide-react';
 import { UnifiedItemType } from './AddTaskModal';
 
 interface CategoriesViewProps {
@@ -13,6 +13,7 @@ interface CategoriesViewProps {
   onToggleTask: (id: string) => void;
   onAddCategory: (name: string, colorBg: string, colorText: string) => void;
   onDeleteCategory: (id: string) => void;
+  onEditCategory: (id: string, name: string, colorBg: string, colorText: string) => void;
   onEditTask: (task: Task) => void;
   onEditHabit: (habit: Habit) => void;
   onOpenCreator: (type: UnifiedItemType, categoryId?: string) => void;
@@ -25,6 +26,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
   onToggleTask,
   onAddCategory, 
   onDeleteCategory,
+  onEditCategory,
   onEditTask,
   onEditHabit,
   onOpenCreator
@@ -33,6 +35,11 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
   const [isAddingCat, setIsAddingCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+
+  // Edit State
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColorIndex, setEditColorIndex] = useState(0);
 
   // --- Filter Logic ---
   const filteredTasks = tasks.filter(task => {
@@ -61,6 +68,22 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
     onAddCategory(newCatName, color.bg, color.text);
     setNewCatName('');
     setIsAddingCat(false);
+  };
+
+  const handleEditClick = (cat: Category) => {
+      setEditingCategory(cat);
+      setEditName(cat.name);
+      // Find color index
+      const idx = CATEGORY_COLORS.findIndex(c => c.bg === cat.colorBg);
+      setEditColorIndex(idx >= 0 ? idx : 0);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingCategory || !editName.trim()) return;
+      const color = CATEGORY_COLORS[editColorIndex];
+      onEditCategory(editingCategory.id, editName, color.bg, color.text);
+      setEditingCategory(null);
   };
 
   const handleDeleteCurrent = () => {
@@ -119,11 +142,21 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                     >
                         {cat.name}
                         {isActive && (
-                            <div 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteCurrent(); }}
-                                className="p-0.5 rounded-full hover:bg-black/10 transition-colors"
-                            >
-                                <Trash2 size={12} strokeWidth={3} />
+                            <div className="flex items-center gap-1 ml-1 pl-1 border-l border-black/10">
+                                <div 
+                                    onClick={(e) => { e.stopPropagation(); handleEditClick(cat); }}
+                                    className="p-1 rounded-full hover:bg-black/10 transition-colors"
+                                    title="编辑分类"
+                                >
+                                    <Pencil size={12} strokeWidth={3} />
+                                </div>
+                                <div 
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteCurrent(); }}
+                                    className="p-1 rounded-full hover:bg-black/10 transition-colors"
+                                    title="删除分类"
+                                >
+                                    <Trash2 size={12} strokeWidth={3} />
+                                </div>
                             </div>
                         )}
                     </button>
@@ -172,6 +205,56 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                         确认添加
                     </button>
                 </form>
+            </div>
+        )}
+
+        {/* Edit Category Modal Overlay */}
+        {editingCategory && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">编辑分类</h3>
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">名称</label>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full px-4 py-2 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-app-primary/20 font-bold text-gray-700"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">颜色主题</label>
+                            <div className="flex flex-wrap gap-3">
+                                {CATEGORY_COLORS.map((color, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setEditColorIndex(idx)}
+                                        className={`w-8 h-8 rounded-full ${color.bg} border-2 transition-all ${editColorIndex === idx ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button 
+                                type="button"
+                                onClick={() => setEditingCategory(null)}
+                                className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-200"
+                            >
+                                取消
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={!editName.trim()}
+                                className="flex-1 py-2.5 bg-app-primary text-white rounded-xl font-bold text-sm disabled:opacity-50 shadow-lg shadow-indigo-200"
+                            >
+                                保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         )}
       </div>
