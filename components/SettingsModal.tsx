@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { User, Database, Info, Trash2, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Database, Info, Trash2, Save, Download, Upload } from 'lucide-react';
 
 interface SettingsModalProps {
   currentName: string;
@@ -11,6 +11,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSaveName, onResetData, onClose }) => {
   const [name, setName] = useState(currentName);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setName(currentName);
@@ -27,6 +28,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
     if (window.confirm("确定要清空所有任务和习惯吗？此操作无法撤销，页面将重新加载。")) {
       onResetData();
     }
+  };
+
+  const handleExport = () => {
+    const data = {
+      categories: localStorage.getItem('planflow_categories'),
+      tasks: localStorage.getItem('planflow_tasks'),
+      habits: localStorage.getItem('planflow_habits'),
+      username: localStorage.getItem('planflow_username'),
+      version: '1.0'
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    a.download = `planflow_backup_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+        
+        // Basic validation
+        if (!data.tasks && !data.habits && !data.categories) {
+            throw new Error("Invalid backup file format");
+        }
+
+        if (window.confirm("这将覆盖当前的所有数据，确定要恢复备份吗？")) {
+            if (data.categories) localStorage.setItem('planflow_categories', data.categories);
+            if (data.tasks) localStorage.setItem('planflow_tasks', data.tasks);
+            if (data.habits) localStorage.setItem('planflow_habits', data.habits);
+            if (data.username) localStorage.setItem('planflow_username', data.username);
+            
+            alert("恢复成功！页面即将刷新。");
+            window.location.reload();
+        }
+      } catch (err) {
+        alert("无法解析备份文件，请确保文件格式正确。");
+        console.error(err);
+      }
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -61,6 +121,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
           <Database size={16} />
           数据管理
         </h3>
+
+        {/* Backup & Restore */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+            <button 
+                onClick={handleExport}
+                className="flex flex-col items-center justify-center gap-2 p-4 bg-indigo-50 text-app-primary rounded-xl border border-indigo-100 hover:bg-indigo-100 hover:border-indigo-200 transition-all group"
+            >
+                <div className="p-2 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                    <Download size={20} />
+                </div>
+                <span className="text-xs font-bold">导出备份</span>
+            </button>
+
+            <button 
+                onClick={handleImportClick}
+                className="flex flex-col items-center justify-center gap-2 p-4 bg-gray-50 text-gray-600 rounded-xl border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all group"
+            >
+                <div className="p-2 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                    <Upload size={20} />
+                </div>
+                <span className="text-xs font-bold">恢复备份</span>
+            </button>
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept=".json" 
+                className="hidden" 
+            />
+        </div>
+
         <div className="bg-red-50 rounded-xl p-4 border border-red-100">
           <h4 className="font-bold text-red-600 mb-1">危险区域</h4>
           <p className="text-xs text-red-400 mb-4">这将清空本地所有的任务、习惯和分类数据，重置为初始状态。</p>
