@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tab, Task, Category, Habit, RepeatFrequency } from './types';
-import { MOCK_TASKS, MOCK_HABITS, INITIAL_CATEGORIES } from './constants';
 import { Sidebar } from './components/Sidebar';
 import { CalendarView } from './components/CalendarView';
 import { BacklogView } from './components/BacklogView';
@@ -18,6 +17,11 @@ const dateReviver = (key: string, value: any) => {
     return new Date(value);
   }
   return value;
+};
+
+const DEFAULT_CATEGORIES: Record<string, Category> = {
+  WORK: { id: 'c_work', name: '工作', colorBg: 'bg-blue-100', colorText: 'text-blue-600' },
+  LIFE: { id: 'c_life', name: '生活', colorBg: 'bg-green-100', colorText: 'text-green-600' },
 };
 
 const App: React.FC = () => {
@@ -45,30 +49,30 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<Record<string, Category>>(() => {
     try {
       const saved = localStorage.getItem('planflow_categories');
-      return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
+      return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
     } catch (e) {
       console.error("Failed to load categories", e);
-      return INITIAL_CATEGORIES;
+      return DEFAULT_CATEGORIES;
     }
   });
 
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const saved = localStorage.getItem('planflow_tasks');
-      return saved ? JSON.parse(saved, dateReviver) : MOCK_TASKS;
+      return saved ? JSON.parse(saved, dateReviver) : [];
     } catch (e) {
       console.error("Failed to load tasks", e);
-      return MOCK_TASKS;
+      return [];
     }
   });
 
   const [habits, setHabits] = useState<Habit[]>(() => {
     try {
       const saved = localStorage.getItem('planflow_habits');
-      return saved ? JSON.parse(saved) : MOCK_HABITS;
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       console.error("Failed to load habits", e);
-      return MOCK_HABITS;
+      return [];
     }
   });
 

@@ -123,22 +123,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </span>
           )}
 
-          {/* Category Tag */}
-          {task.category && (
+          {/* Category Tag (Only for non-habits) */}
+          {!isHabit && task.category && (
             <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-wide ${task.category.colorBg} ${task.category.colorText}`}>
               {task.category.name}
             </span>
           )}
           
-          {/* Habit Tag */}
+          {/* Habit Tag (New Style) */}
           {isHabit && (
-             <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-wide bg-orange-100 text-orange-600 flex items-center gap-1">
-                 习惯
-                 {(task.streak || 0) > 0 && (
-                    <span className="flex items-center gap-0.5 ml-1 text-orange-500">
-                        <Flame size={10} fill="currentColor" /> {task.streak}
-                    </span>
+             <span className="px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wide bg-orange-50 border border-orange-100 flex items-center gap-1.5">
+                 {task.category && (
+                    <div className={`w-1.5 h-1.5 rounded-full ${task.category.colorText.replace('text-', 'bg-')}`}></div>
                  )}
+                 <div className="flex items-center gap-0.5 text-orange-600">
+                    <Flame size={12} fill="currentColor" /> 
+                    <span>{task.streak || 0}</span>
+                 </div>
              </span>
           )}
 
