@@ -5,7 +5,7 @@
 它不仅仅是一个简单的待办清单，而是融合了 **GTD (Getting Things Done)**、**时间块管理 (Time Blocking)** 和 **习惯养成 (Habit Tracking)** 的全能工作台。
 
 > 💡 **设计理念：** 拒绝伪 Deadline 焦虑，让任务管理回归“执行”本身。通过可视化的时间轴和自动化的回收机制，帮助高效能人士掌控每一天。
-
+- Web端：[MyPlan](https://time-management-app-ashen.vercel.app/)
 ---
 
 ## ✨ 核心亮点 (Core Features)
@@ -17,8 +17,10 @@
 *   **智能校验:** 当你安排的执行时间晚于死线时，系统会弹出红色警告，防止逾期风险。
 - **注意**：只有当设置Do Date时才会显示到日程表中（无论列表模式还是时间轴模式），没有设置Do Date则这个task仅仅是一个待办，你可以在待办池、待办、分类里看到它
 
-<img width="679" height="970" alt="Image" src="https://github.com/user-attachments/assets/04b394b4-b944-4121-a179-26fb4921fdfa" />
-<img width="695" height="1019" alt="Image" src="https://github.com/user-attachments/assets/72cb0335-43f5-4384-aa5c-1556a2cca801" />
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+  <img style="width:49%;max-width:49%;height:auto;border-radius:8px;" alt="Image 1" src="https://github.com/user-attachments/assets/04b394b4-b944-4121-a179-26fb4921fdfa" />
+  <img style="width:49%;max-width:49%;height:auto;border-radius:8px;" alt="Image 2" src="https://github.com/user-attachments/assets/72cb0335-43f5-4384-aa5c-1556a2cca801" />
+</div>
 
 ### 2. 🔄 每日回顾与自动回收 (Auto-Recycle)
 *   **告别堆积:** 昨天没做完的任务不会悄悄变成红色的“过期”列表让你焦虑。
