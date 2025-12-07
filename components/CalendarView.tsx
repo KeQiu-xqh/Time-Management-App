@@ -40,18 +40,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const weekTimelineScrollRef = useRef<HTMLDivElement>(null);
 
-  // --- Mobile Adaptation: Force Day View on small screens if Week is selected ---
-  useEffect(() => {
-      const handleResize = () => {
-          if (window.innerWidth < 768 && viewMode === 'week') {
-              setViewMode('day');
-          }
-      };
-      // Check on mount and resize
-      handleResize();
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-  }, [viewMode]);
+  // --- Touch Drag State ---
+  const [touchDragState, setTouchDragState] = useState<{
+      taskId: string;
+      startY: number;
+      currentY: number;
+      originalTop: number;
+      startTimeStr: string;
+  } | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- Date Helpers ---
   const getStartOfWeek = (d: Date) => {
@@ -258,6 +255,57 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           }
       } catch (err) {
           console.error("Drop Backlog error", err);
+      }
+  };
+
+  // --- Touch Drag Handlers ---
+  const handleTouchStart = (e: React.TouchEvent, taskId: string, startTimeStr: string) => {
+      const touch = e.touches[0];
+      const startY = touch.clientY;
+      const { top } = getTaskPosition(startTimeStr);
+      
+      // Start Long Press Timer
+      longPressTimerRef.current = setTimeout(() => {
+          setTouchDragState({
+              taskId,
+              startY,
+              currentY: startY,
+              originalTop: top,
+              startTimeStr
+          });
+          // Vibrate if supported
+          if (navigator.vibrate) navigator.vibrate(50);
+      }, 500); // 500ms long press
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+      // If dragging, update position
+      if (touchDragState) {
+          e.preventDefault(); // Prevent scrolling
+          const touch = e.touches[0];
+          setTouchDragState(prev => prev ? ({ ...prev, currentY: touch.clientY }) : null);
+      } else {
+          // If moved before long press triggers, cancel timer
+          if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+          }
+      }
+  };
+
+  const handleTouchEnd = () => {
+      if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+      }
+
+      if (touchDragState) {
+          const deltaY = touchDragState.currentY - touchDragState.startY;
+          const newTop = Math.max(0, touchDragState.originalTop + deltaY);
+          const newTimeStr = calculateTimeFromOffsetY(newTop);
+          
+          onScheduleTask(touchDragState.taskId, selectedDate, newTimeStr);
+          setTouchDragState(null);
       }
   };
 
@@ -628,6 +676,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               const { top, height } = getTaskPosition(t.startTime, t.duration);
                               const isHabitInstance = !!t.originalHabitId;
                               
+                              // Calculate dynamic style for dragging
+                              const isDragging = touchDragState?.taskId === t.id;
+                              const dragStyle = isDragging ? {
+                                  top: touchDragState.originalTop + (touchDragState.currentY - touchDragState.startY),
+                                  zIndex: 50,
+                                  opacity: 0.8,
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                  transform: 'scale(1.02)'
+                              } : { top };
+
                               return (
                                   <div
                                       key={t.id}
@@ -636,6 +694,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           handleDragStart(e, t.id, 'timeline');
                                       }}
                                       onDragEnd={resetDragState}
+                                      onTouchStart={(e) => handleTouchStart(e, t.id, t.startTime!)}
+                                      onTouchMove={handleTouchMove}
+                                      onTouchEnd={handleTouchEnd}
                                       onClick={(e) => {
                                           e.stopPropagation();
                                           onEditTask(t);
@@ -644,7 +705,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           t.category ? t.category.colorBg.replace('bg-', 'bg-opacity-20 bg-') : 'bg-gray-100'
                                       } ${t.category ? t.category.colorBg.replace('bg-', 'border-') : 'border-gray-300'}
                                       ${isHabitInstance ? 'border-l-orange-400 bg-orange-50/50' : ''}`}
-                                      style={{ top, height: Math.max(height, 28) }} 
+                                      style={{ ...dragStyle, height: Math.max(height, 28) }} 
                                   >
                                       <div className="flex flex-col h-full pointer-events-none">
                                           {/* Category Label */}
@@ -689,7 +750,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {/* 1. Header Row: Dates & All Day */}
             <div className="flex-none border-b border-gray-100 bg-gray-50/50">
                  {/* Spacer for ruler */}
-                 <div className="w-16 flex-shrink-0 border-r border-gray-100 bg-gray-50"></div>
+                 <div className="w-16 flex-shrink-0 border-r border-gray-100 bg-gray-50 hidden md:block"></div>
+                 <div className="w-8 flex-shrink-0 border-r border-gray-100 bg-gray-50 md:hidden"></div>
                  
                  {/* Day Columns Header */}
                  <div className="flex-1 flex overflow-hidden">
@@ -705,11 +767,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 onDrop={(e) => handleDropOnWeekAllDay(e, i)}
                              >
                                  <div className={`text-center py-2 border-b border-gray-100 ${d.isToday ? 'bg-indigo-50/50' : ''}`}>
-                                    <div className={`text-[10px] font-bold uppercase ${d.isToday ? 'text-app-primary' : 'text-gray-400'}`}>{d.dayName}</div>
-                                    <div className={`text-sm font-bold ${d.isToday ? 'text-app-primary' : 'text-gray-700'}`}>{d.date.getDate()}</div>
+                                    <div className={`text-[8px] md:text-[10px] font-bold uppercase truncate ${d.isToday ? 'text-app-primary' : 'text-gray-400'}`}>{d.dayName}</div>
+                                    <div className={`text-xs md:text-sm font-bold ${d.isToday ? 'text-app-primary' : 'text-gray-700'}`}>{d.date.getDate()}</div>
                                  </div>
-                                 <div className="p-1 min-h-[40px] space-y-1">
-                                    {/* Small chips for all day tasks in week view */}
+                                 <div className="p-1 min-h-[40px] space-y-1 hidden md:block">
+                                    {/* Small chips for all day tasks in week view - Hide on mobile to save space */}
                                     {dayAllDayTasks.map(t => (
                                         <div 
                                             key={t.id} 
@@ -733,10 +795,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div ref={weekTimelineScrollRef} className="flex-1 overflow-y-auto relative no-scrollbar bg-white">
                  <div className="flex min-h-[1440px]" style={{ height: 24 * HOUR_HEIGHT }}>
                       {/* Ruler */}
-                      <div className="w-16 flex-shrink-0 border-r border-gray-50 bg-gray-50/30 text-xs text-gray-400 font-medium text-right pr-3 pt-2 select-none">
+                      <div className="w-16 flex-shrink-0 border-r border-gray-50 bg-gray-50/30 text-xs text-gray-400 font-medium text-right pr-3 pt-2 select-none hidden md:block">
                           {hours.map(h => (
                               <div key={h} style={{ height: HOUR_HEIGHT }} className="relative">
                                   <span className="-top-3 relative">{h.toString().padStart(2, '0')}:00</span>
+                              </div>
+                          ))}
+                      </div>
+                      <div className="w-8 flex-shrink-0 border-r border-gray-50 bg-gray-50/30 text-[10px] text-gray-400 font-medium text-right pr-1 pt-2 select-none md:hidden">
+                          {hours.map(h => (
+                              <div key={h} style={{ height: HOUR_HEIGHT }} className="relative">
+                                  <span className="-top-2 relative">{h}</span>
                               </div>
                           ))}
                       </div>

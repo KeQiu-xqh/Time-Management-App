@@ -502,7 +502,11 @@ const App: React.FC = () => {
         )}
       </main>
       
-      <BottomNav currentTab={activeTab} onSwitch={setActiveTab} />
+      <BottomNav 
+        currentTab={activeTab} 
+        onSwitch={setActiveTab} 
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       {/* Unified Entry Modal */}
       <Modal
