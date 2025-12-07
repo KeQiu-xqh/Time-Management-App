@@ -61,6 +61,14 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
 
   // --- Helpers ---
+  const formatDateToLocal = (date: Date | undefined) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const parseDate = (dateStr: string) => {
     if (!dateStr) return undefined;
     const [y, m, d] = dateStr.split('-').map(Number);
@@ -108,8 +116,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       const catKey = Object.keys(categories).find(key => task.category && categories[key].id === task.category.id);
       setSelectedCategoryKey(catKey || '');
       
-      setDoDateStr(task.doDate ? task.doDate.toISOString().split('T')[0] : '');
-      setDeadlineStr(task.deadline ? task.deadline.toISOString().split('T')[0] : '');
+      setDoDateStr(formatDateToLocal(task.doDate));
+      setDeadlineStr(formatDateToLocal(task.deadline));
       
       if (task.startTime) {
           setIsTimeSet(true);
@@ -135,7 +143,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const resetForm = () => {
       setTitle('');
       setSelectedCategoryKey('');
-      setDoDateStr(new Date().toISOString().split('T')[0]); // Default to today for tasks
+      setDoDateStr(formatDateToLocal(new Date())); // Default to today for tasks
       setDeadlineStr('');
       setIsTimeSet(false);
       setStartTime('09:00');

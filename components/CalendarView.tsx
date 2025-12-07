@@ -454,18 +454,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                       ${isHabitInstance ? 'border-l-orange-400 bg-orange-50/50' : ''}`}
                                       style={{ top, height: Math.max(height, 28) }} 
                                   >
-                                      <div className="flex items-start justify-between gap-2 pointer-events-none">
-                                          <div className="min-w-0">
-                                              <div className={`text-xs font-bold truncate ${t.isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                                      <div className="flex flex-col h-full pointer-events-none">
+                                          {/* Category Label */}
+                                          {t.category && (t.duration || 30) >= 30 && (
+                                              <div className="text-[10px] font-bold opacity-60 truncate mb-0.5">
+                                                  {t.category.name}
+                                              </div>
+                                          )}
+
+                                          <div className="flex items-start justify-between gap-1 min-w-0">
+                                              <div className={`text-xs font-bold truncate leading-tight ${t.isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                                                   {t.title}
                                                   {isHabitInstance && <span className="ml-1 text-[9px] text-orange-500 bg-orange-100 px-1 rounded">习惯</span>}
                                               </div>
-                                              <div className="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-0.5 group-hover:text-gray-700">
+                                              {t.isCompleted && <div className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-app-primary text-white flex items-center justify-center text-[9px]">✓</div>}
+                                          </div>
+
+                                          {/* Time (Show if height allows) */}
+                                          {(t.duration || 30) >= 45 && (
+                                              <div className="text-[10px] text-gray-500 font-medium flex items-center gap-1 mt-auto group-hover:text-gray-700">
                                                  <Clock size={10} />
                                                  {t.startTime}
                                               </div>
-                                          </div>
-                                          {t.isCompleted && <div className="w-4 h-4 rounded-full bg-app-primary text-white flex items-center justify-center text-[10px]">✓</div>}
+                                          )}
                                       </div>
                                   </div>
                               );
@@ -602,11 +613,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                               width: `calc(${width} - 4px)` // Subtract gap
                                           }}
                                        >
-                                           <div className={`font-bold truncate ${t.isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-                                               {t.title}
-                                           </div>
-                                           <div className="hidden group-hover:block text-[9px] text-gray-500">
-                                               {t.startTime}
+                                           <div className="flex flex-col h-full pointer-events-none">
+                                               {t.category && (t.duration || 30) >= 30 && (
+                                                   <div className="text-[9px] opacity-70 truncate leading-none mb-0.5">
+                                                       {t.category.name}
+                                                   </div>
+                                               )}
+                                               <div className={`font-bold truncate ${t.isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                                                   {t.title}
+                                               </div>
+                                               <div className="hidden group-hover:block text-[9px] text-gray-500 mt-auto">
+                                                   {t.startTime}
+                                               </div>
                                            </div>
                                        </div>
                                    );
@@ -623,8 +641,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     <div className="h-full flex overflow-hidden">
        {/* --- CENTER MAIN CONTENT --- */}
        <div className="flex-1 flex flex-col h-full overflow-hidden border-r border-gray-100">
-           {/* Sticky Header */}
-           <div className="sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 px-8 border-b border-gray-100/50 flex-shrink-0">
+           {/* Header (Fixed, not sticky) */}
+           <div className="bg-app-bg/95 backdrop-blur-sm z-40 pt-8 px-8 border-b border-gray-100/50 flex-shrink-0">
               <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-4">
                  <div>
                     <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
@@ -726,12 +744,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            </div>
 
            {/* Content Area */}
-           <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-app-bg relative"> 
+           <div className="flex-1 overflow-hidden bg-app-bg relative"> 
               {/* --- DAY VIEW --- */}
               {viewMode === 'day' && (
                  <>
                     {displayMode === 'list' ? (
-                        <div className="px-8 pt-4 pb-20 space-y-8">
+                        <div className="h-full overflow-y-auto px-8 pt-4 pb-20 space-y-8 no-scrollbar">
                              {/* ... Day List Logic ... */}
                              {isToday(selectedDate) && overdueTasks.length > 0 && (
                                  <div className="animate-fade-in">
