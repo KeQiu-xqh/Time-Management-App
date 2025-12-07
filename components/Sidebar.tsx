@@ -19,7 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSwitch, userName
   ];
 
   return (
-    <div className="h-screen w-64 bg-white border-r border-gray-100 flex flex-col py-8 px-4 flex-shrink-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+    <div className="hidden md:flex h-screen w-64 bg-white border-r border-gray-100 flex-col py-8 px-4 flex-shrink-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       {/* Logo / Title Area */}
       <div className="flex items-center gap-3 px-4 mb-10">
         <div className="w-10 h-10 bg-app-primary rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 text-white">

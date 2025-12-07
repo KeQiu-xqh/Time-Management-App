@@ -36,8 +36,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [displayMode, setDisplayMode] = useState<'list' | 'timeline'>('list'); // Unified display mode
   const [isDragOverBacklog, setIsDragOverBacklog] = useState(false);
   const [showCompletedBacklog, setShowCompletedBacklog] = useState(true);
+  const [isMobileBacklogOpen, setIsMobileBacklogOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const weekTimelineScrollRef = useRef<HTMLDivElement>(null);
+
+  // --- Mobile Adaptation: Force Day View on small screens if Week is selected ---
+  useEffect(() => {
+      const handleResize = () => {
+          if (window.innerWidth < 768 && viewMode === 'week') {
+              setViewMode('day');
+          }
+      };
+      // Check on mount and resize
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   // --- Date Helpers ---
   const getStartOfWeek = (d: Date) => {
@@ -450,27 +464,45 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               </div>
                               
                               <div className="flex-1 space-y-1 overflow-hidden">
-                                  {displayItems.map((item: any, idx) => (
-                                      <div 
-                                          key={`${item.id}-${idx}`}
-                                          className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium flex items-center gap-1 ${
-                                              item.isHabit 
-                                                ? 'bg-orange-100 text-orange-700' 
-                                                : item.isCompleted 
-                                                    ? 'bg-gray-100 text-gray-400 line-through'
-                                                    : item.category ? item.category.colorBg + ' ' + item.category.colorText.replace('text-', 'text-opacity-90 text-') : 'bg-blue-100 text-blue-700'
-                                          }`}
-                                          title={item.title}
-                                      >
-                                          {item.isHabit && <Flame size={8} fill="currentColor" />}
-                                          {item.title}
-                                      </div>
-                                  ))}
-                                  {remaining > 0 && (
-                                      <div className="text-[9px] text-gray-400 font-bold text-center hover:text-app-primary">
-                                          +{remaining} 更多
-                                      </div>
-                                  )}
+                                  {/* Desktop: Text Bars */}
+                                  <div className="hidden md:block space-y-1">
+                                      {displayItems.map((item: any, idx) => (
+                                          <div 
+                                              key={`${item.id}-${idx}`}
+                                              className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium flex items-center gap-1 ${
+                                                  item.isHabit 
+                                                    ? 'bg-orange-100 text-orange-700' 
+                                                    : item.isCompleted 
+                                                        ? 'bg-gray-100 text-gray-400 line-through'
+                                                        : item.category ? item.category.colorBg + ' ' + item.category.colorText.replace('text-', 'text-opacity-90 text-') : 'bg-blue-100 text-blue-700'
+                                              }`}
+                                              title={item.title}
+                                          >
+                                              {item.isHabit && <Flame size={8} fill="currentColor" />}
+                                              {item.title}
+                                          </div>
+                                      ))}
+                                      {remaining > 0 && (
+                                          <div className="text-[9px] text-gray-400 font-bold text-center hover:text-app-primary">
+                                              +{remaining} 更多
+                                          </div>
+                                      )}
+                                  </div>
+
+                                  {/* Mobile: Dots */}
+                                  <div className="md:hidden flex flex-wrap justify-center gap-0.5 content-start pt-1">
+                                      {combined.slice(0, 6).map((item: any, idx) => (
+                                           <div 
+                                              key={idx} 
+                                              className={`w-1.5 h-1.5 rounded-full ${
+                                                  item.isHabit 
+                                                    ? 'bg-orange-400' 
+                                                    : item.category ? item.category.colorText.replace('text-', 'bg-') : 'bg-blue-400'
+                                              }`}
+                                           ></div>
+                                      ))}
+                                      {combined.length > 6 && <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>}
+                                  </div>
                               </div>
                           </div>
                       );
@@ -846,7 +878,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         </button>
                         <button 
                             onClick={() => { setViewMode('week'); }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${viewMode === 'week' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`hidden md:flex px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1 ${viewMode === 'week' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             <Grid size={14} /> 周
                         </button>
@@ -870,11 +902,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         </button>
                      </div>
                      
-                     <div className="w-px h-6 bg-gray-300 mx-1"></div>
+                     <div className="w-px h-6 bg-gray-300 mx-1 hidden sm:block"></div>
+
+                     <button 
+                        onClick={() => setIsMobileBacklogOpen(true)}
+                        className="lg:hidden flex items-center justify-center w-10 h-10 bg-white rounded-xl shadow-sm border border-gray-100 text-gray-600 active:scale-95 transition-transform"
+                     >
+                        <Inbox size={20} />
+                     </button>
 
                      <button 
                         onClick={onAddTask}
-                        className="flex items-center gap-2 bg-app-primary text-white px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all active:scale-95"
+                        className="flex items-center gap-2 bg-app-primary text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all active:scale-95"
                     >
                         <Plus size={18} strokeWidth={3} />
                         <span className="font-bold text-sm hidden sm:inline">新建</span>
@@ -1138,6 +1177,56 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                </>
            )}
        </div>
+
+       {/* --- MOBILE BACKLOG DRAWER --- */}
+       {isMobileBacklogOpen && (
+           <div className="fixed inset-0 z-50 lg:hidden">
+               <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsMobileBacklogOpen(false)}></div>
+               <div className="absolute right-0 top-0 bottom-0 w-4/5 max-w-sm bg-white shadow-2xl flex flex-col animate-slide-in-right">
+                   <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                       <div className="flex items-center gap-2">
+                           <Inbox size={20} className="text-app-primary" />
+                           <h3 className="font-bold text-gray-800">待办池</h3>
+                           <span className="bg-app-primary/10 text-app-primary text-xs px-2 py-0.5 rounded-full font-bold">{unscheduledTasks.length}</span>
+                       </div>
+                       <button onClick={() => setIsMobileBacklogOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                           <ChevronRight size={20} className="text-gray-400" />
+                       </button>
+                   </div>
+                   
+                   <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/30">
+                       {unscheduledTasks.length === 0 ? (
+                           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                               <Inbox size={48} className="mb-2 opacity-20" />
+                               <p className="text-sm">暂无待办任务</p>
+                           </div>
+                       ) : (
+                           unscheduledTasks.map(task => (
+                               <div key={task.id} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between gap-3">
+                                   <div className="flex-1 min-w-0">
+                                       <div className="flex items-center gap-2 mb-1">
+                                           {task.category && <span className={`w-2 h-2 rounded-full ${task.category.colorBg}`}></span>}
+                                           <span className="text-[10px] text-gray-400 font-bold truncate">{task.category?.name || '无分类'}</span>
+                                       </div>
+                                       <h4 className={`text-sm font-bold truncate ${task.isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>{task.title}</h4>
+                                   </div>
+                                   <button 
+                                       onClick={() => {
+                                           onScheduleTask(task.id, selectedDate);
+                                           setIsMobileBacklogOpen(false);
+                                       }}
+                                       className="p-2 bg-indigo-50 text-app-primary rounded-lg hover:bg-app-primary hover:text-white transition-colors"
+                                       title="加入当前日期"
+                                   >
+                                       <ArrowLeft size={18} />
+                                   </button>
+                               </div>
+                           ))
+                       )}
+                   </div>
+               </div>
+           </div>
+       )}
     </div>
   );
 };

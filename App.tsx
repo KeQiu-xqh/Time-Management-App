@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tab, Task, Category, Habit, RepeatFrequency } from './types';
 import { Sidebar } from './components/Sidebar';
+import { BottomNav } from './components/BottomNav';
 import { CalendarView } from './components/CalendarView';
 import { BacklogView } from './components/BacklogView';
 import { HabitsView } from './components/HabitsView';
@@ -487,19 +488,21 @@ const App: React.FC = () => {
         userName={userName}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
-      <main className="flex-1 h-full overflow-hidden bg-app-bg relative">
+      <main className="flex-1 h-full overflow-hidden bg-app-bg relative flex flex-col">
         {activeTab === Tab.Calendar ? (
-           <div className="h-full w-full">
+           <div className="flex-1 w-full overflow-hidden pb-[80px] md:pb-0">
               {renderContent()}
            </div>
         ) : (
-           <div className="h-full w-full overflow-y-auto no-scrollbar">
+           <div className="h-full w-full overflow-y-auto no-scrollbar pb-[80px] md:pb-0">
               <div className="max-w-7xl mx-auto min-h-full">
                 {renderContent()}
               </div>
            </div>
         )}
       </main>
+      
+      <BottomNav currentTab={activeTab} onSwitch={setActiveTab} />
 
       {/* Unified Entry Modal */}
       <Modal
