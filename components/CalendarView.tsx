@@ -40,16 +40,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const weekTimelineScrollRef = useRef<HTMLDivElement>(null);
 
-  // --- Touch Drag State ---
-  const [touchDragState, setTouchDragState] = useState<{
-      taskId: string;
-      startY: number;
-      currentY: number;
-      originalTop: number;
-      startTimeStr: string;
-  } | null>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   // --- Date Helpers ---
   const getStartOfWeek = (d: Date) => {
      const date = new Date(d);
@@ -255,57 +245,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           }
       } catch (err) {
           console.error("Drop Backlog error", err);
-      }
-  };
-
-  // --- Touch Drag Handlers ---
-  const handleTouchStart = (e: React.TouchEvent, taskId: string, startTimeStr: string) => {
-      const touch = e.touches[0];
-      const startY = touch.clientY;
-      const { top } = getTaskPosition(startTimeStr);
-      
-      // Start Long Press Timer
-      longPressTimerRef.current = setTimeout(() => {
-          setTouchDragState({
-              taskId,
-              startY,
-              currentY: startY,
-              originalTop: top,
-              startTimeStr
-          });
-          // Vibrate if supported
-          if (navigator.vibrate) navigator.vibrate(50);
-      }, 500); // 500ms long press
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-      // If dragging, update position
-      if (touchDragState) {
-          e.preventDefault(); // Prevent scrolling
-          const touch = e.touches[0];
-          setTouchDragState(prev => prev ? ({ ...prev, currentY: touch.clientY }) : null);
-      } else {
-          // If moved before long press triggers, cancel timer
-          if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current);
-              longPressTimerRef.current = null;
-          }
-      }
-  };
-
-  const handleTouchEnd = () => {
-      if (longPressTimerRef.current) {
-          clearTimeout(longPressTimerRef.current);
-          longPressTimerRef.current = null;
-      }
-
-      if (touchDragState) {
-          const deltaY = touchDragState.currentY - touchDragState.startY;
-          const newTop = Math.max(0, touchDragState.originalTop + deltaY);
-          const newTimeStr = calculateTimeFromOffsetY(newTop);
-          
-          onScheduleTask(touchDragState.taskId, selectedDate, newTimeStr);
-          setTouchDragState(null);
       }
   };
 
@@ -676,16 +615,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               const { top, height } = getTaskPosition(t.startTime, t.duration);
                               const isHabitInstance = !!t.originalHabitId;
                               
-                              // Calculate dynamic style for dragging
-                              const isDragging = touchDragState?.taskId === t.id;
-                              const dragStyle = isDragging ? {
-                                  top: touchDragState.originalTop + (touchDragState.currentY - touchDragState.startY),
-                                  zIndex: 50,
-                                  opacity: 0.8,
-                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                                  transform: 'scale(1.02)'
-                              } : { top };
-
                               return (
                                   <div
                                       key={t.id}
@@ -694,9 +623,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           handleDragStart(e, t.id, 'timeline');
                                       }}
                                       onDragEnd={resetDragState}
-                                      onTouchStart={(e) => handleTouchStart(e, t.id, t.startTime!)}
-                                      onTouchMove={handleTouchMove}
-                                      onTouchEnd={handleTouchEnd}
                                       onClick={(e) => {
                                           e.stopPropagation();
                                           onEditTask(t);
@@ -705,7 +631,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                           t.category ? t.category.colorBg.replace('bg-', 'bg-opacity-20 bg-') : 'bg-gray-100'
                                       } ${t.category ? t.category.colorBg.replace('bg-', 'border-') : 'border-gray-300'}
                                       ${isHabitInstance ? 'border-l-orange-400 bg-orange-50/50' : ''}`}
-                                      style={{ ...dragStyle, height: Math.max(height, 28) }} 
+                                      style={{ top, height: Math.max(height, 28) }} 
                                   >
                                       <div className="flex flex-col h-full pointer-events-none">
                                           {/* Category Label */}
@@ -947,7 +873,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         </button>
                         <button 
                             onClick={() => { setViewMode('week'); }}
-                            className={`hidden md:flex px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1 ${viewMode === 'week' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${viewMode === 'week' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             <Grid size={14} /> 周
                         </button>
