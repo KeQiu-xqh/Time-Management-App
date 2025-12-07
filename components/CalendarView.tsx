@@ -328,71 +328,73 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       const currentTimeTop = isToday(selectedDate) ? getCurrentTimePosition() : -1;
 
       return (
-          <div className="flex flex-col h-full overflow-hidden bg-white rounded-t-3xl border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
-              {/* A. All-Day Section */}
+          <div className="flex flex-col h-full overflow-hidden bg-white border-t border-gray-100">
+              {/* A. All-Day Section (Fixed) */}
               <div 
-                className="flex-shrink-0 p-4 border-b border-gray-100 bg-gray-50/50 min-h-[80px] transition-colors"
+                className="flex-none border-b border-gray-100 bg-gray-50/50 min-h-[80px] transition-colors"
                 onDragOver={handleDragOver}
                 onDrop={handleDropOnAllDay}
               >
-                  <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide flex items-center justify-between">
-                      <span>全天 & 习惯</span>
-                      <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">{allDayTasks.length + habitTasks.length}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                      {allDayTasks.length === 0 && habitTasks.length === 0 && (
-                          <div className="text-[10px] text-gray-300 italic border border-dashed border-gray-200 px-3 py-1 rounded-lg">
-                              拖拽至此处设为全天
-                          </div>
-                      )}
-                      
-                      {/* Habits */}
-                      {habitTasks.map(t => {
-                          const isScheduled = timedTasks.some(timedTask => timedTask.originalHabitId === t.id);
-                          return (
+                  <div className="p-4">
+                    <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide flex items-center justify-between">
+                        <span>全天 & 习惯</span>
+                        <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">{allDayTasks.length + habitTasks.length}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {allDayTasks.length === 0 && habitTasks.length === 0 && (
+                            <div className="text-[10px] text-gray-300 italic border border-dashed border-gray-200 px-3 py-1 rounded-lg">
+                                拖拽至此处设为全天
+                            </div>
+                        )}
+                        
+                        {/* Habits */}
+                        {habitTasks.map(t => {
+                            const isScheduled = timedTasks.some(timedTask => timedTask.originalHabitId === t.id);
+                            return (
+                                <div 
+                                    key={t.id} 
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, t.id, 'habit')}
+                                    onDragEnd={resetDragState}
+                                    className={`group relative px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
+                                        t.isCompleted ? 'bg-orange-50 text-orange-400 border-orange-100' : 'bg-white border-orange-200 text-gray-700'
+                                    }`}
+                                >
+                                    <div onClick={(e) => { e.stopPropagation(); handleToggleMixed(t.id); }} className="flex items-center gap-2 cursor-pointer">
+                                        {t.isCompleted ? <div className="w-2 h-2 rounded-full bg-orange-400" /> : <div className="w-2 h-2 rounded-full border-2 border-orange-400" />}
+                                        <span className={t.isCompleted ? 'line-through opacity-50' : ''}>{t.title}</span>
+                                        <Flame size={10} className="text-orange-500" fill={t.streak ? "currentColor" : "none"} />
+                                    </div>
+                                    {isScheduled && !t.isCompleted && (
+                                        <Clock size={12} className="text-orange-300" />
+                                    )}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleEditClick(t); }} 
+                                        className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-orange-500"
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
+                            );
+                        })}
+
+                        {/* Tasks */}
+                        {allDayTasks.map(t => (
                             <div 
                                 key={t.id} 
                                 draggable
-                                onDragStart={(e) => handleDragStart(e, t.id, 'habit')}
+                                onDragStart={(e) => handleDragStart(e, t.id, 'timeline')}
                                 onDragEnd={resetDragState}
-                                className={`group relative px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
-                                    t.isCompleted ? 'bg-orange-50 text-orange-400 border-orange-100' : 'bg-white border-orange-200 text-gray-700'
+                                onClick={() => onEditTask(t)}
+                                className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer hover:shadow-md transition-all active:opacity-50 active:cursor-grabbing ${
+                                    t.isCompleted ? 'bg-gray-100 text-gray-400 border-transparent' : 'bg-white border-gray-200 text-gray-700 cursor-grab'
                                 }`}
                             >
-                                <div onClick={(e) => { e.stopPropagation(); handleToggleMixed(t.id); }} className="flex items-center gap-2 cursor-pointer">
-                                    {t.isCompleted ? <div className="w-2 h-2 rounded-full bg-orange-400" /> : <div className="w-2 h-2 rounded-full border-2 border-orange-400" />}
-                                    <span className={t.isCompleted ? 'line-through opacity-50' : ''}>{t.title}</span>
-                                    <Flame size={10} className="text-orange-500" fill={t.streak ? "currentColor" : "none"} />
-                                </div>
-                                {isScheduled && !t.isCompleted && (
-                                    <Clock size={12} className="text-orange-300" />
-                                )}
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEditClick(t); }} 
-                                    className="opacity-0 group-hover:opacity-100 ml-1 text-gray-400 hover:text-orange-500"
-                                >
-                                    Edit
-                                </button>
+                                <div className={`w-2 h-2 rounded-full ${t.category?.colorBg || 'bg-gray-300'}`}></div>
+                                <span className={t.isCompleted ? 'line-through' : ''}>{t.title}</span>
                             </div>
-                          );
-                      })}
-
-                      {/* Tasks */}
-                      {allDayTasks.map(t => (
-                          <div 
-                            key={t.id} 
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, t.id, 'timeline')}
-                            onDragEnd={resetDragState}
-                            onClick={() => onEditTask(t)}
-                            className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-2 cursor-pointer hover:shadow-md transition-all active:opacity-50 active:cursor-grabbing ${
-                                t.isCompleted ? 'bg-gray-100 text-gray-400 border-transparent' : 'bg-white border-gray-200 text-gray-700 cursor-grab'
-                            }`}
-                          >
-                              <div className={`w-2 h-2 rounded-full ${t.category?.colorBg || 'bg-gray-300'}`}></div>
-                              <span className={t.isCompleted ? 'line-through' : ''}>{t.title}</span>
-                          </div>
-                      ))}
+                        ))}
+                    </div>
                   </div>
               </div>
 
@@ -493,9 +495,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const currentTimeTop = getCurrentTimePosition();
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-white rounded-t-3xl border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+        <div className="flex flex-col h-full overflow-hidden bg-white border-t border-gray-100">
             {/* 1. Header Row: Dates & All Day */}
-            <div className="flex border-b border-gray-100 bg-gray-50/50">
+            <div className="flex-none border-b border-gray-100 bg-gray-50/50">
                  {/* Spacer for ruler */}
                  <div className="w-16 flex-shrink-0 border-r border-gray-100 bg-gray-50"></div>
                  
@@ -638,11 +640,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <div className="h-full w-full flex overflow-hidden">
        {/* --- CENTER MAIN CONTENT --- */}
        <div className="flex-1 flex flex-col h-full overflow-hidden border-r border-gray-100">
-           {/* Header (Fixed, not sticky) */}
-           <div className="bg-app-bg/95 backdrop-blur-sm z-40 pt-8 px-8 border-b border-gray-100/50 flex-shrink-0">
+           {/* Sticky Header */}
+           <div className="flex-none bg-app-bg/95 backdrop-blur-sm z-40 pt-8 px-8 border-b border-gray-100/50">
               <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-4">
                  <div>
                     <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
@@ -866,7 +868,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
        {/* --- RIGHT SIDEBAR: BACKLOG POOL --- */}
        <div 
-         className={`w-80 border-l border-gray-100 flex-shrink-0 flex flex-col h-full z-30 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex transition-colors duration-300 ${isDragOverBacklog ? 'bg-red-50' : 'bg-white'}`}
+         className={`w-80 h-full flex flex-col border-l bg-white hidden lg:flex transition-colors duration-300 ${isDragOverBacklog ? 'bg-red-50' : ''}`}
          onDragOver={handleBacklogDragOver}
          onDragLeave={handleBacklogDragLeave}
          onDrop={handleBacklogDrop}
@@ -883,7 +885,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
            ) : (
                <>
-                <div className="p-6 border-b border-gray-50">
+                <div className="flex-none p-6 border-b border-gray-50">
                     <div className="flex items-center gap-2 mb-1">
                         <Inbox size={18} className="text-gray-400" />
                         <h3 className="font-bold text-gray-700">待办池</h3>

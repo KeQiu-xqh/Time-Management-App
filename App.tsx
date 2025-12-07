@@ -483,10 +483,18 @@ const App: React.FC = () => {
         userName={userName}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
-      <main className="flex-1 h-full overflow-y-auto bg-app-bg relative no-scrollbar">
-        <div className="max-w-7xl mx-auto min-h-full">
-          {renderContent()}
-        </div>
+      <main className="flex-1 h-full overflow-hidden bg-app-bg relative">
+        {activeTab === Tab.Calendar ? (
+           <div className="h-full w-full">
+              {renderContent()}
+           </div>
+        ) : (
+           <div className="h-full w-full overflow-y-auto no-scrollbar">
+              <div className="max-w-7xl mx-auto min-h-full">
+                {renderContent()}
+              </div>
+           </div>
+        )}
       </main>
 
       {/* Unified Entry Modal */}
