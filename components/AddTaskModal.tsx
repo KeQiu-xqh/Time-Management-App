@@ -16,6 +16,7 @@ export interface UnifiedItemData {
     repeat?: RepeatFrequency;
     // Habit specific
     frequency?: 'daily' | 'weekly';
+    defaultTime?: string;
 }
 
 interface AddTaskModalProps {
@@ -59,6 +60,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
   // Habit Fields
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
+  const [habitDefaultTime, setHabitDefaultTime] = useState<string>('');
 
   // --- Helpers ---
   const formatDateToLocal = (date: Date | undefined) => {
@@ -138,6 +140,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       const catKey = Object.keys(categories).find(key => habit.category && categories[key].id === habit.category.id);
       setSelectedCategoryKey(catKey || '');
       setHabitFrequency(habit.frequency || 'daily');
+      setHabitDefaultTime(habit.defaultTime || '');
   };
 
   const resetForm = () => {
@@ -150,6 +153,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setEndTime('09:30');
       setRepeat('none');
       setHabitFrequency('daily');
+      setHabitDefaultTime('');
   };
 
   const doDateObj = parseDate(doDateStr);
@@ -196,6 +200,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
         data.repeat = repeat;
     } else {
         data.frequency = habitFrequency;
+        data.defaultTime = habitDefaultTime || undefined;
     }
 
     onSave(activeType, data);
@@ -434,6 +439,36 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                          </button>
                     </div>
                     <p className="text-xs text-gray-400 mt-2">习惯建立初期，建议每天坚持。</p>
+                </div>
+
+                {/* Default Time for Habit */}
+                <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                        <Clock size={16} className="text-gray-400" />
+                        惯用时间 (可选)
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <input 
+                            type="time" 
+                            value={habitDefaultTime}
+                            onChange={(e) => setHabitDefaultTime(e.target.value)}
+                            className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 outline-none text-sm text-gray-700 font-medium"
+                        />
+                        {habitDefaultTime && (
+                            <button 
+                                type="button"
+                                onClick={() => setHabitDefaultTime('')}
+                                className="text-xs text-gray-400 hover:text-red-400 underline"
+                            >
+                                清除
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                        {habitDefaultTime 
+                            ? "该习惯将自动显示在日程时间轴的指定时间点。" 
+                            : "留空则显示在顶部的“全天 & 习惯”区域。"}
+                    </p>
                 </div>
              </div>
         )}

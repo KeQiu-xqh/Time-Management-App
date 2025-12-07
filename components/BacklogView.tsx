@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Task } from '../types';
 import { TaskCard } from './TaskCard';
-import { LayoutList, CalendarClock, Inbox } from 'lucide-react';
+import { LayoutList, CalendarClock, Inbox, Eye, EyeOff } from 'lucide-react';
 
 interface BacklogViewProps {
   tasks: Task[];
@@ -11,21 +11,22 @@ interface BacklogViewProps {
 }
 
 export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, onQuickAdd, onEditTask }) => {
-  // 1. Filter all incomplete tasks
-  const incompleteTasks = tasks.filter(t => !t.isCompleted);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // 1. Filter tasks based on showCompleted
+  const tasksToDisplay = showCompleted ? tasks : tasks.filter(t => !t.isCompleted);
 
   // 2. Unscheduled Pool (No doDate)
   // Logic: Show tasks without a date.
   // Sort: Reverse chronological (Newest created tasks on top)
-  // Assuming the `tasks` array order roughly reflects creation order (appended).
-  const unscheduledTasks = [...incompleteTasks]
+  const unscheduledTasks = [...tasksToDisplay]
     .filter(t => !t.doDate)
     .reverse();
 
   // 3. Scheduled List (Has doDate)
   // Logic: Show tasks with a date.
   // Sort: Chronological (Earliest date on top)
-  const scheduledTasks = incompleteTasks
+  const scheduledTasks = tasksToDisplay
     .filter(t => t.doDate)
     .sort((a, b) => {
         const dateA = new Date(a.doDate!).getTime();
@@ -37,14 +38,23 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, o
     <div className="pb-20">
       {/* Header */}
       <div className="sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-4 px-8 border-b border-gray-100/50">
-        <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-purple-100 text-purple-600 rounded-2xl">
-                <LayoutList size={28} />
+        <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 text-purple-600 rounded-2xl">
+                    <LayoutList size={28} />
+                </div>
+                <div>
+                    <h2 className="text-3xl font-bold text-gray-800">任务总览</h2>
+                    <p className="text-gray-400 font-medium">统一管理所有未完成的事项。</p>
+                </div>
             </div>
-            <div>
-                <h2 className="text-3xl font-bold text-gray-800">任务总览</h2>
-                <p className="text-gray-400 font-medium">统一管理所有未完成的事项。</p>
-            </div>
+            <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-app-primary transition-all shadow-sm"
+            >
+                {showCompleted ? <Eye size={18} /> : <EyeOff size={18} />}
+                <span className="text-sm font-bold">{showCompleted ? '隐藏已完成' : '显示已完成'}</span>
+            </button>
         </div>
       </div>
 

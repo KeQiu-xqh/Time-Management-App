@@ -41,6 +41,7 @@ export interface Habit {
   title: string;
   category?: Category; // Added category association
   frequency?: 'daily' | 'weekly'; // New field for habit frequency
+  defaultTime?: string; // Optional: Default time for the habit (e.g., "07:00")
   completedDates: string[]; // ISO Date strings "YYYY-MM-DD"
   streak: number;
 }

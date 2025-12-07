@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Task, Habit } from '../types';
 import { TaskCard } from './TaskCard';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid, AlertCircle, ArrowLeft, Inbox, List, AlignLeft, Clock, History, Flame } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid, AlertCircle, ArrowLeft, Inbox, List, AlignLeft, Clock, History, Flame, Eye, EyeOff } from 'lucide-react';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -32,9 +32,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     onConvertHabitToTask
 }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
   const [displayMode, setDisplayMode] = useState<'list' | 'timeline'>('list'); // Unified display mode
   const [isDragOverBacklog, setIsDragOverBacklog] = useState(false);
+  const [showCompletedBacklog, setShowCompletedBacklog] = useState(true);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const weekTimelineScrollRef = useRef<HTMLDivElement>(null);
 
@@ -75,13 +76,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // --- Navigation Handlers ---
   const handlePrev = () => {
-    const daysToSubtract = viewMode === 'week' ? 7 : 1;
-    setSelectedDate(prev => addDays(prev, -daysToSubtract));
+    if (viewMode === 'month') {
+        setSelectedDate(prev => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() - 1);
+            return d;
+        });
+    } else {
+        const daysToSubtract = viewMode === 'week' ? 7 : 1;
+        setSelectedDate(prev => addDays(prev, -daysToSubtract));
+    }
   };
 
   const handleNext = () => {
-    const daysToAdd = viewMode === 'week' ? 7 : 1;
-    setSelectedDate(prev => addDays(prev, daysToAdd));
+    if (viewMode === 'month') {
+        setSelectedDate(prev => {
+            const d = new Date(prev);
+            d.setMonth(d.getMonth() + 1);
+            return d;
+        });
+    } else {
+        const daysToAdd = viewMode === 'week' ? 7 : 1;
+        setSelectedDate(prev => addDays(prev, daysToAdd));
+    }
   };
 
   const handleToday = () => {
@@ -269,19 +286,36 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           doDate: selectedDate,
           isHabit: true,
           streak: h.streak,
-          category: { id: 'habit_cat', name: '习惯', colorBg: 'bg-orange-100', colorText: 'text-orange-600' }
+          category: h.category || { id: 'habit_cat', name: '习惯', colorBg: 'bg-orange-100', colorText: 'text-orange-600' },
+          startTime: h.defaultTime,
+          duration: h.defaultTime ? 30 : undefined,
+          originalHabitId: h.id
       } as Task));
   }, [habits, selectedDate]);
 
   const { allDayTasks, timedTasks } = useMemo(() => {
       const allDay: Task[] = [];
       const timed: Task[] = [];
+      
+      // 1. Real Tasks
       currentDayTasks.forEach(t => {
           if (t.startTime) timed.push(t);
           else allDay.push(t);
       });
+
+      // 2. Habits with Default Time (Virtual Tasks)
+      habitTasks.forEach(h => {
+          if (h.startTime) {
+              // Only add if not already overridden by a real task instance
+              const isOverridden = timed.some(t => t.originalHabitId === h.id);
+              if (!isOverridden) {
+                  timed.push(h);
+              }
+          }
+      });
+
       return { allDayTasks: allDay, timedTasks: timed };
-  }, [currentDayTasks]);
+  }, [currentDayTasks, habitTasks]);
 
   const overdueTasks = useMemo(() => {
     return tasks.filter(t => {
@@ -295,8 +329,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   }, [tasks]);
 
   const unscheduledTasks = useMemo(() => {
-      return tasks.filter(t => !t.doDate && !t.isCompleted).reverse();
-  }, [tasks]);
+      return tasks.filter(t => !t.doDate && (showCompletedBacklog || !t.isCompleted)).reverse();
+  }, [tasks, showCompletedBacklog]);
 
   // --- Helper: Calculate Position ---
   const getTaskPosition = (timeStr: string, duration = 30) => {
@@ -322,6 +356,130 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       }
   };
 
+  // 5. Drop on Month Cell
+  const handleDropOnMonthCell = (e: React.DragEvent, date: Date) => {
+      e.preventDefault();
+      resetDragState();
+      const dataStr = e.dataTransfer.getData('application/json');
+      if (!dataStr) return;
+
+      try {
+          const { id, type } = JSON.parse(dataStr);
+          if (type === 'habit') {
+             // Optional: Convert habit to task for this specific day
+             onConvertHabitToTask(id, date, "09:00"); 
+          } else {
+             onScheduleTask(id, date, null);
+          }
+      } catch (err) {
+          console.error("Drop Month error", err);
+      }
+  };
+
+  const renderMonthView = () => {
+      const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      const startDate = getStartOfWeek(monthStart);
+      const days = Array.from({ length: 42 }, (_, i) => addDays(startDate, i));
+      const weekDaysHeader = ['周一','周二','周三','周四','周五','周六','周日'];
+
+      return (
+          <div className="flex flex-col h-full bg-white overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50 flex-none">
+                  {weekDaysHeader.map((d, i) => (
+                      <div key={i} className="py-2 text-center text-xs font-bold text-gray-500 uppercase">
+                          {d}
+                      </div>
+                  ))}
+              </div>
+              
+              {/* Grid */}
+              <div className="flex-1 grid grid-cols-7 grid-rows-6 overflow-y-auto">
+                  {days.map((d, i) => {
+                      const isCurrentMonth = d.getMonth() === selectedDate.getMonth();
+                      const isTodayDate = isToday(d);
+                      const dateStr = d.toISOString().split('T')[0];
+                      
+                      // Filter Tasks
+                      const dayTasks = tasks.filter(t => t.doDate && isSameDay(new Date(t.doDate), d));
+                      
+                      // Filter Habits (Show completed)
+                      const dayHabits = habits.filter(h => h.completedDates.includes(dateStr)).map(h => ({
+                          ...h,
+                          id: h.id,
+                          title: h.title,
+                          isCompleted: true,
+                          isHabit: true,
+                          category: h.category || { id: 'habit', name: '习惯', colorBg: 'bg-orange-100', colorText: 'text-orange-600' }
+                      } as any));
+
+                      // Combine and Sort
+                      const combined = [
+                          ...dayHabits,
+                          ...dayTasks
+                      ].sort((a, b) => {
+                          if (a.isHabit && !b.isHabit) return -1;
+                          if (!a.isHabit && b.isHabit) return 1;
+                          if (a.startTime && !b.startTime) return -1;
+                          if (!a.startTime && b.startTime) return 1;
+                          return 0;
+                      });
+
+                      const displayItems = combined.slice(0, 3);
+                      const remaining = combined.length - 3;
+
+                      return (
+                          <div 
+                              key={i}
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDropOnMonthCell(e, d)}
+                              onClick={() => {
+                                  setSelectedDate(d);
+                                  setViewMode('day');
+                              }}
+                              className={`border-b border-r border-gray-100 p-1 min-h-[80px] flex flex-col transition-colors hover:bg-gray-50 cursor-pointer ${
+                                  !isCurrentMonth ? 'bg-gray-50/30 text-gray-400' : 'bg-white'
+                              } ${isTodayDate ? 'bg-indigo-50/30' : ''}`}
+                          >
+                              <div className="flex justify-center mb-1">
+                                  <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                                      isTodayDate ? 'bg-app-primary text-white' : 'text-gray-700'
+                                  }`}>
+                                      {d.getDate()}
+                                  </span>
+                              </div>
+                              
+                              <div className="flex-1 space-y-1 overflow-hidden">
+                                  {displayItems.map((item: any, idx) => (
+                                      <div 
+                                          key={`${item.id}-${idx}`}
+                                          className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium flex items-center gap-1 ${
+                                              item.isHabit 
+                                                ? 'bg-orange-100 text-orange-700' 
+                                                : item.isCompleted 
+                                                    ? 'bg-gray-100 text-gray-400 line-through'
+                                                    : item.category ? item.category.colorBg + ' ' + item.category.colorText.replace('text-', 'text-opacity-90 text-') : 'bg-blue-100 text-blue-700'
+                                          }`}
+                                          title={item.title}
+                                      >
+                                          {item.isHabit && <Flame size={8} fill="currentColor" />}
+                                          {item.title}
+                                      </div>
+                                  ))}
+                                  {remaining > 0 && (
+                                      <div className="text-[9px] text-gray-400 font-bold text-center hover:text-app-primary">
+                                          +{remaining} 更多
+                                      </div>
+                                  )}
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+          </div>
+      );
+  };
+
   // --- Renderers ---
   const renderDayTimeline = () => {
       const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -338,17 +496,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <div className="p-4">
                     <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide flex items-center justify-between">
                         <span>全天 & 习惯</span>
-                        <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">{allDayTasks.length + habitTasks.length}</span>
+                        <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">{allDayTasks.length + habitTasks.filter(t => !t.startTime).length}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        {allDayTasks.length === 0 && habitTasks.length === 0 && (
+                        {allDayTasks.length === 0 && habitTasks.filter(t => !t.startTime).length === 0 && (
                             <div className="text-[10px] text-gray-300 italic border border-dashed border-gray-200 px-3 py-1 rounded-lg">
                                 拖拽至此处设为全天
                             </div>
                         )}
                         
                         {/* Habits */}
-                        {habitTasks.map(t => {
+                        {habitTasks.filter(t => !t.startTime).map(t => {
                             const isScheduled = timedTasks.some(timedTask => timedTask.originalHabitId === t.id);
                             return (
                                 <div 
@@ -587,6 +745,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                // Filter tasks for this day
                                const dayTimedTasks = tasks.filter(t => t.doDate && isSameDay(new Date(t.doDate), d.date) && t.startTime);
                                
+                               // Filter habits with defaultTime
+                               const dayHabits = habits.filter(h => h.defaultTime).map(h => ({
+                                   id: h.id,
+                                   title: h.title,
+                                   isCompleted: h.completedDates.includes(d.date.toISOString().split('T')[0]),
+                                   doDate: d.date,
+                                   isHabit: true,
+                                   streak: h.streak,
+                                   category: h.category || { id: 'habit_cat', name: '习惯', colorBg: 'bg-orange-100', colorText: 'text-orange-600' },
+                                   startTime: h.defaultTime,
+                                   duration: 30,
+                                   originalHabitId: h.id
+                               } as Task));
+
+                               // Merge: Only add habit if not overridden
+                               dayHabits.forEach(h => {
+                                   const isOverridden = dayTimedTasks.some(t => t.originalHabitId === h.id);
+                                   if (!isOverridden) {
+                                       dayTimedTasks.push(h);
+                                   }
+                               });
+
                                return dayTimedTasks.map(t => {
                                    if (!t.startTime) return null;
                                    const { top, height } = getTaskPosition(t.startTime, t.duration);
@@ -652,7 +832,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                        {viewMode === 'day' && <span className="text-gray-300">/ {selectedDate.getDate()}日</span>}
                     </h2>
                     <p className="text-gray-400 font-medium">
-                        {viewMode === 'day' ? '专注于当下的任务。' : '查看本周任务概览。'}
+                        {viewMode === 'day' ? '专注于当下的任务。' : viewMode === 'week' ? '查看本周任务概览。' : '宏观规划整月进度。'}
                     </p>
                  </div>
 
@@ -669,6 +849,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${viewMode === 'week' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             <Grid size={14} /> 周
+                        </button>
+                        <button 
+                            onClick={() => { setViewMode('month'); }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${viewMode === 'month' ? 'bg-indigo-50 text-app-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            <Grid size={14} /> 月
                         </button>
                      </div>
 
@@ -716,6 +902,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                          ))}
                      </div>
                  )}
+                 {viewMode !== 'month' && (
                  <div className={`${viewMode === 'day' ? '' : 'w-full flex justify-center'}`}>
                     <div className="flex bg-gray-100/80 p-1 rounded-lg">
                            <button
@@ -742,6 +929,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                            </button>
                     </div>
                  </div>
+                 )}
               </div>
            </div>
 
@@ -863,6 +1051,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     )}
                   </>
               )}
+
+              {/* --- MONTH VIEW --- */}
+              {viewMode === 'month' && (
+                  <div className="h-full">
+                      {renderMonthView()}
+                  </div>
+              )}
            </div>
        </div>
 
@@ -886,10 +1081,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            ) : (
                <>
                 <div className="flex-none p-6 border-b border-gray-50">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Inbox size={18} className="text-gray-400" />
-                        <h3 className="font-bold text-gray-700">待办池</h3>
-                        <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full font-bold">{unscheduledTasks.length}</span>
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <Inbox size={18} className="text-gray-400" />
+                            <h3 className="font-bold text-gray-700">待办池</h3>
+                            <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full font-bold">{unscheduledTasks.length}</span>
+                        </div>
+                        <button
+                            onClick={() => setShowCompletedBacklog(!showCompletedBacklog)}
+                            className="p-1.5 text-gray-400 hover:text-app-primary hover:bg-indigo-50 rounded-lg transition-colors"
+                            title={showCompletedBacklog ? "隐藏已完成" : "显示已完成"}
+                        >
+                            {showCompletedBacklog ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
                     </div>
                     <p className="text-[10px] text-gray-400">拖拽任务到时间轴，或点击 <span className="font-bold text-app-primary">←</span> 加入</p>
                 </div>
@@ -925,7 +1129,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                                 {task.category ? task.category.name : '无分类'}
                                             </span>
                                     </div>
-                                    <h4 className="text-sm font-bold text-gray-700 leading-snug pointer-events-none">{task.title}</h4>
+                                    <h4 className={`text-sm font-bold leading-snug pointer-events-none ${task.isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>{task.title}</h4>
                                 </div>
                             </div>
                         ))

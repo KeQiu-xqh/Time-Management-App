@@ -418,6 +418,10 @@ const App: React.FC = () => {
       ));
   };
 
+  const handleClearCompletedTasks = () => {
+      setTasks(prev => prev.filter(t => !t.isCompleted));
+  };
+
   // --- 5. Render Router ---
   const renderContent = () => {
     switch (activeTab) {
@@ -535,6 +539,7 @@ const App: React.FC = () => {
             currentName={userName}
             onSaveName={setUserName}
             onResetData={handleResetData}
+            onClearCompleted={handleClearCompletedTasks}
             onClose={() => setIsSettingsOpen(false)}
         />
       </Modal>

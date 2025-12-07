@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Category, Task, Habit } from '../types';
 import { CATEGORY_COLORS } from '../constants';
 import { TaskCard } from './TaskCard';
-import { Layers, Plus, Trash2, Search, RefreshCw, Flame, Pencil } from 'lucide-react';
+import { Layers, Plus, Trash2, Search, RefreshCw, Flame, Pencil, Eye, EyeOff } from 'lucide-react';
 import { UnifiedItemType } from './AddTaskModal';
 
 interface CategoriesViewProps {
@@ -35,6 +35,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
   const [isAddingCat, setIsAddingCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [showCompleted, setShowCompleted] = useState(true);
 
   // Edit State
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -54,6 +55,9 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
 
   const activeTasks = filteredTasks.filter(t => !t.isCompleted);
   const completedTasks = filteredTasks.filter(t => t.isCompleted);
+  
+  // Final list to display based on toggle
+  const tasksToDisplay = showCompleted ? filteredTasks : activeTasks;
 
   const filteredHabits = habits.filter(habit => {
       if (activeCategoryId === 'ALL') return true;
@@ -294,15 +298,25 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
 
         {/* --- 2. Tasks Section (Bottom) --- */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            {/* Show header only if habits exist to distinguish sections */}
-            {filteredHabits.length > 0 && (
-                <div className="flex items-center gap-2 mb-4">
+            {/* Header with Toggle */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
                    <Layers size={18} className="text-gray-500" />
                    <h3 className="text-lg font-bold text-gray-800">待办任务 <span className="text-sm font-normal text-gray-400">Tasks</span></h3>
                 </div>
-            )}
+                
+                {completedTasks.length > 0 && (
+                    <button 
+                        onClick={() => setShowCompleted(!showCompleted)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-app-primary transition-colors bg-gray-50 px-2 py-1 rounded-lg"
+                    >
+                        {showCompleted ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {showCompleted ? '显示已完成' : '隐藏已完成'}
+                    </button>
+                )}
+            </div>
             
-            {filteredTasks.length === 0 ? (
+            {tasksToDisplay.length === 0 ? (
                 <div className={`flex flex-col items-center justify-center py-12 text-gray-400 opacity-60 rounded-2xl ${filteredHabits.length === 0 ? 'bg-gray-50 border-2 border-dashed border-gray-100' : ''}`}>
                     <Search size={32} className="mb-2 text-gray-300" />
                     <p>暂无任务</p>
@@ -324,7 +338,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                     )}
 
                     {/* Completed Divider */}
-                    {completedTasks.length > 0 && (
+                    {showCompleted && completedTasks.length > 0 && (
                         <div className="pt-4">
                             {activeTasks.length > 0 && (
                                 <div className="flex items-center gap-4 mb-6 opacity-50">

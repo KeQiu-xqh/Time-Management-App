@@ -6,10 +6,11 @@ interface SettingsModalProps {
   currentName: string;
   onSaveName: (name: string) => void;
   onResetData: () => void;
+  onClearCompleted: () => void;
   onClose: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSaveName, onResetData, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSaveName, onResetData, onClearCompleted, onClose }) => {
   const [name, setName] = useState(currentName);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,6 +29,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
     if (window.confirm("确定要清空所有任务和习惯吗？此操作无法撤销，页面将重新加载。")) {
       onResetData();
     }
+  };
+
+  const handleClearCompleted = () => {
+      if (window.confirm("确定要删除所有已完成的任务吗？此操作不可恢复。（习惯数据将保留）")) {
+          onClearCompleted();
+          alert("已完成任务清理完毕！");
+      }
   };
 
   const handleExport = () => {
@@ -154,14 +162,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
 
         <div className="bg-red-50 rounded-xl p-4 border border-red-100">
           <h4 className="font-bold text-red-600 mb-1">危险区域</h4>
-          <p className="text-xs text-red-400 mb-4">这将清空本地所有的任务、习惯和分类数据，重置为初始状态。</p>
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg text-sm font-bold hover:bg-red-500 hover:text-white hover:border-transparent transition-all"
-          >
-            <Trash2 size={16} />
-            清除所有数据
-          </button>
+          <p className="text-xs text-red-400 mb-4">管理您的数据存储。</p>
+          
+          <div className="space-y-3">
+              <button
+                onClick={handleClearCompleted}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg text-sm font-bold hover:bg-red-50 transition-all"
+              >
+                <Trash2 size={16} />
+                🧹 清理已完成任务
+              </button>
+
+              <button
+                onClick={handleReset}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg text-sm font-bold hover:bg-red-500 hover:text-white hover:border-transparent transition-all"
+              >
+                <Trash2 size={16} />
+                清除所有数据 (重置)
+              </button>
+          </div>
         </div>
       </section>
 
