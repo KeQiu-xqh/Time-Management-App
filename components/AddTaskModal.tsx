@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Category, Task, Habit, RepeatFrequency, RepeatRule } from '../types';
 import { repeatLabel } from './recurrence';
 import { durationFromTimes, endTimeForDuration } from './calendarGesture';
+import { formatDurationHours, formatDurationInput, parseEstimatedDuration } from './taskDuration';
 import { Calendar as CalendarIcon, Tag, Clock, AlertTriangle, Trash2, Timer, RotateCw, CheckSquare, LayoutList, RefreshCw } from 'lucide-react';
 
 export type UnifiedItemType = 'task' | 'habit';
@@ -15,6 +16,7 @@ export interface UnifiedItemData {
     deadline?: Date;
     startTime?: string;
     duration?: number;
+    estimatedDuration?: number;
     repeat?: RepeatFrequency;
     repeatRule?: RepeatRule;
     repeatAnchorDate?: string;
@@ -60,6 +62,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [isTimeSet, setIsTimeSet] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:30'); // New State for End Time
+  const [estimatedDurationInput, setEstimatedDurationInput] = useState('');
   const [repeat, setRepeat] = useState<RepeatFrequency>('none');
   const [repeatInterval, setRepeatInterval] = useState('1');
   const [repeatUnit, setRepeatUnit] = useState<RepeatRule['unit']>('day');
@@ -115,6 +118,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       
       setDoDateStr(formatDateToLocal(task.doDate));
       setDeadlineStr(formatDateToLocal(task.deadline));
+      setEstimatedDurationInput(task.estimatedDuration ? formatDurationInput(task.estimatedDuration) : '');
       
       if (task.startTime) {
           setIsTimeSet(true);
@@ -150,6 +154,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setIsTimeSet(false);
       setStartTime('09:00');
       setEndTime('09:30');
+      setEstimatedDurationInput('');
       setRepeat('none');
       setRepeatInterval('1');
       setRepeatUnit('day');
@@ -165,6 +170,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   
   // Time Validation
   const duration = durationFromTimes(startTime, endTime);
+  const estimatedDuration = parseEstimatedDuration(estimatedDurationInput);
+  const estimatedDurationError = estimatedDurationInput.trim() && estimatedDuration === null
+      ? '预估时长格式应为 2h40min、2h 或 40min'
+      : '';
   const isTimeInvalid = isTimeSet && (!Number.isFinite(duration) || duration <= 0);
   const customRule: RepeatRule = {
       interval: Number(repeatInterval), unit: repeatUnit,
@@ -194,6 +203,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     e.preventDefault();
     if (!title.trim()) return;
     if (repeatError) return;
+    if (estimatedDurationError) return;
     if (activeType === 'task' && isTimeSet && isTimeInvalid) return; // Block invalid time
 
     const category = selectedCategoryKey ? categories[selectedCategoryKey] : undefined;
@@ -206,6 +216,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     if (activeType === 'task') {
         data.doDate = parseDate(doDateStr);
         data.deadline = parseDate(deadlineStr);
+        data.estimatedDuration = estimatedDuration ?? undefined;
         if (isTimeSet) {
             data.startTime = startTime;
             data.duration = duration;
@@ -342,6 +353,30 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 focus:border-app-primary focus:ring-2 focus:ring-app-primary/10 outline-none text-sm text-gray-700 font-medium"
                         />
                     </div>
+                </div>
+
+                <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                        <Timer size={16} className="text-gray-400" />
+                        预估时长 <span className="font-normal text-gray-400">（可选）</span>
+                    </label>
+                    <div className="relative">
+                        <input
+                            aria-label="预估时长"
+                            type="text"
+                            inputMode="text"
+                            value={estimatedDurationInput}
+                            onChange={(event) => setEstimatedDurationInput(event.target.value)}
+                            placeholder="例如：2h40min"
+                            className={`w-full rounded-xl border bg-white px-4 py-2.5 pr-24 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-app-primary/10 ${estimatedDurationError ? 'border-red-300 focus:border-red-400' : 'border-gray-200 focus:border-app-primary'}`}
+                        />
+                        {estimatedDuration !== null && (
+                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-bold text-indigo-500">{formatDurationHours(estimatedDuration)}</span>
+                        )}
+                    </div>
+                    <p className={`mt-2 text-xs ${estimatedDurationError ? 'text-red-500' : 'text-gray-400'}`}>
+                        {estimatedDurationError || '最小单位为分钟，例如 2h40min；保存后显示为小时。'}
+                    </p>
                 </div>
 
                 {/* Repeat Task */}

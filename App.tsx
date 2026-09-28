@@ -141,6 +141,7 @@ const App: React.FC = () => {
         deadline: taskData.deadline,
         startTime: taskData.startTime,
         duration: taskData.duration,
+        estimatedDuration: taskData.estimatedDuration,
         repeat: taskData.repeat,
         repeatRule: taskData.repeatRule,
         repeatAnchorDate: taskData.repeatAnchorDate

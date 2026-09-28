@@ -2,7 +2,8 @@
 import React from 'react';
 import { Task } from '../types';
 import { repeatLabel } from './recurrence';
-import { Circle, CheckCircle2, RotateCw, AlertCircle, Zap, Flame } from 'lucide-react';
+import { formatDurationHours } from './taskDuration';
+import { Circle, CheckCircle2, RotateCw, AlertCircle, Zap, Flame, Timer } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
@@ -86,6 +87,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                  <h3 className={`text-xs font-bold leading-snug break-words ${task.isCompleted ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                     {task.title}
                  </h3>
+                 {task.estimatedDuration && <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-400"><Timer size={10} />预估 {formatDurationHours(task.estimatedDuration)}</p>}
             </div>
          </div>
       </div>
@@ -151,6 +153,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex items-center gap-0.5 text-gray-400" title={repeatLabel(task)} aria-label={repeatLabel(task)}>
               <RotateCw size={12} />
             </div>
+          )}
+
+          {task.estimatedDuration && (
+            <span className="flex items-center gap-1 text-[11px] font-bold text-indigo-400">
+              <Timer size={12} />预估 {formatDurationHours(task.estimatedDuration)}
+            </span>
           )}
         </div>
 

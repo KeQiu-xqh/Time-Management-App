@@ -37,6 +37,7 @@ export interface Task {
   // New Time Fields
   startTime?: string; // "HH:MM", e.g. "14:30"
   duration?: number; // in minutes, default 30
+  estimatedDuration?: number; // estimated total effort in whole minutes
 
   // UI-Only fields for mixed views (Habits as Tasks)
   isHabit?: boolean;

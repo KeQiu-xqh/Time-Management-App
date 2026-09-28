@@ -4,6 +4,7 @@ import { dateKey } from './calendarGesture';
 import { Task, Habit } from '../types';
 import { TaskCard } from './TaskCard';
 import { MobileCalendar } from './MobileCalendar';
+import { formatDurationHours } from './taskDuration';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid, AlertCircle, ArrowLeft, Inbox, List, AlignLeft, Clock, History, Flame, Eye, EyeOff } from 'lucide-react';
 
 interface CalendarViewProps {
@@ -1178,6 +1179,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                             </span>
                                     </div>
                                     <h4 className={`text-sm font-bold leading-snug pointer-events-none ${task.isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>{task.title}</h4>
+                                    {task.estimatedDuration && <p className="mt-1 text-[10px] font-semibold text-indigo-400">预估 {formatDurationHours(task.estimatedDuration)}</p>}
                                 </div>
                             </div>
                         ))
@@ -1218,6 +1220,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                            <span className="text-[10px] text-gray-400 font-bold truncate">{task.category?.name || '无分类'}</span>
                                        </div>
                                        <h4 className={`text-sm font-bold truncate ${task.isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>{task.title}</h4>
+                                       {task.estimatedDuration && <p className="mt-1 text-[10px] font-semibold text-indigo-400">预估 {formatDurationHours(task.estimatedDuration)}</p>}
                                    </div>
                                    <button 
                                        onClick={() => {

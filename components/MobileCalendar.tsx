@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Inbox, X, Check } from 'lucide-react';
 import { Task, Habit } from '../types';
 import { dateKey, shiftDay, monday, timeMinutes, timeLabel, gestureRange } from './calendarGesture';
+import { formatDurationHours } from './taskDuration';
 import './MobileCalendar.css';
 
 interface Props {
@@ -188,7 +189,7 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
     <span className="mc-sr-only" aria-live="polite">{announcement}</span>
     {detail && <div className="mc-backlog-overlay"><button className="mc-backdrop" aria-label="关闭任务详情" onClick={() => setDetail(null)} /><section className="mc-backlog" role="dialog" aria-label="任务详情">
       <header><h3>{detail.title}</h3><button aria-label="关闭任务详情" onClick={() => setDetail(null)}><X size={20} /></button></header>
-      <p aria-live="polite">{detail.doDate ? dateKey(new Date(detail.doDate)) : '未安排'} · {detail.startTime ? `${detail.startTime}–${timeLabel(timeMinutes(detail.startTime) + (detail.duration || 30))}` : '全天'}{detail.category ? ` · ${detail.category.name}` : ''}</p>
+      <p aria-live="polite">{detail.doDate ? dateKey(new Date(detail.doDate)) : '未安排'} · {detail.startTime ? `${detail.startTime}–${timeLabel(timeMinutes(detail.startTime) + (detail.duration || 30))}` : '全天'}{detail.estimatedDuration ? ` · 预估 ${formatDurationHours(detail.estimatedDuration)}` : ''}{detail.category ? ` · ${detail.category.name}` : ''}</p>
       {detail.startTime && <div className="mc-nudge"><button onClick={() => nudgeDetail('move', -1)}>提前 1 分钟</button><button onClick={() => nudgeDetail('move', 1)}>推迟 1 分钟</button><button onClick={() => nudgeDetail('end', -1)}>缩短 1 分钟</button><button onClick={() => nudgeDetail('end', 1)}>延长 1 分钟</button></div>}
       <div className="mc-detail-actions"><button onClick={() => { onToggleTask(detail.id); setDetail(null); }}>{detail.isCompleted ? '标为未完成' : '完成任务'}</button><button onClick={() => { setDetail(null); onEditTask(detail); }}>编辑任务</button><button onClick={() => { onUnscheduleTask(detail.id); setDetail(null); }}>退回待办池</button></div>
     </section></div>}
