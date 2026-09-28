@@ -11,13 +11,22 @@ const weekStart = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
 
 export function rescheduleTask(task: Task, date: Date, startTime?: string | null, duration?: number): Task {
   const changedDate = !task.doDate || key(new Date(task.doDate)) !== key(date);
+  let nextDuration = duration ?? task.duration;
+  if (nextDuration === undefined && typeof startTime === 'string' && task.estimatedDuration) {
+    const match = /^(\d{2}):(\d{2})$/.exec(startTime);
+    if (match) {
+      const startMinutes = Number(match[1]) * 60 + Number(match[2]);
+      const remainingMinutes = 24 * 60 - startMinutes;
+      if (remainingMinutes > 0) nextDuration = Math.min(task.estimatedDuration, remainingMinutes);
+    }
+  }
   return {
     ...task,
     doDate: date,
     // A new execution day starts a new cycle; time-only changes retain month-end anchors.
     repeatAnchorDate: changedDate ? key(date) : task.repeatAnchorDate,
     ...(startTime !== undefined ? { startTime: startTime === null ? undefined : startTime } : {}),
-    ...(duration !== undefined ? { duration } : {}),
+    ...(nextDuration !== undefined ? { duration: nextDuration } : {}),
   };
 }
 

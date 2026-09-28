@@ -63,6 +63,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:30'); // New State for End Time
   const [estimatedDurationInput, setEstimatedDurationInput] = useState('');
+  const [isDurationCustomized, setIsDurationCustomized] = useState(false);
   const [repeat, setRepeat] = useState<RepeatFrequency>('none');
   const [repeatInterval, setRepeatInterval] = useState('1');
   const [repeatUnit, setRepeatUnit] = useState<RepeatRule['unit']>('day');
@@ -119,6 +120,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setDoDateStr(formatDateToLocal(task.doDate));
       setDeadlineStr(formatDateToLocal(task.deadline));
       setEstimatedDurationInput(task.estimatedDuration ? formatDurationInput(task.estimatedDuration) : '');
+      setIsDurationCustomized(Boolean(task.startTime) || task.duration !== undefined);
       
       if (task.startTime) {
           setIsTimeSet(true);
@@ -155,6 +157,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setStartTime('09:00');
       setEndTime('09:30');
       setEstimatedDurationInput('');
+      setIsDurationCustomized(false);
       setRepeat('none');
       setRepeatInterval('1');
       setRepeatUnit('day');
@@ -197,6 +200,22 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       } else {
           setEndTime(endTimeForDuration(newStart, 30));
       }
+  };
+
+  const handleEstimatedDurationChange = (value: string) => {
+      setEstimatedDurationInput(value);
+      const parsed = parseEstimatedDuration(value);
+      if (isTimeSet && !isDurationCustomized && parsed !== null) {
+          setEndTime(endTimeForDuration(startTime, parsed));
+      }
+  };
+
+  const handleTimeSettingToggle = () => {
+      if (!isTimeSet) {
+          const parsed = parseEstimatedDuration(estimatedDurationInput);
+          setEndTime(endTimeForDuration(startTime, initialTask?.duration ?? parsed ?? 30));
+      }
+      setIsTimeSet(!isTimeSet);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -366,7 +385,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             type="text"
                             inputMode="text"
                             value={estimatedDurationInput}
-                            onChange={(event) => setEstimatedDurationInput(event.target.value)}
+                            onChange={(event) => handleEstimatedDurationChange(event.target.value)}
                             placeholder="例如：2h40min"
                             className={`w-full rounded-xl border bg-white px-4 py-2.5 pr-24 text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-app-primary/10 ${estimatedDurationError ? 'border-red-300 focus:border-red-400' : 'border-gray-200 focus:border-app-primary'}`}
                         />
@@ -425,7 +444,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             具体时间设置
                         </label>
                         <button type="button" role="switch" aria-checked={isTimeSet} aria-label="具体时间设置"
-                            onClick={() => setIsTimeSet(!isTimeSet)}
+                            onClick={handleTimeSettingToggle}
                             className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${isTimeSet ? 'bg-app-primary' : 'bg-gray-300'}`}
                         >
                             <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isTimeSet ? 'translate-x-4' : ''}`}></div>
@@ -450,7 +469,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                                     aria-label="结束时间"
                                     type="time" 
                                     value={endTime}
-                                    onChange={(e) => setEndTime(e.target.value)}
+                                    onChange={(e) => {
+                                        setEndTime(e.target.value);
+                                        setIsDurationCustomized(true);
+                                    }}
                                     className={`w-full px-3 py-2 rounded-lg bg-white border text-sm focus:border-app-primary outline-none ${
                                         isTimeInvalid ? 'border-red-300 text-red-500 bg-red-50' : 'border-gray-200'
                                     }`}

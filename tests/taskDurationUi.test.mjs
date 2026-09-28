@@ -17,6 +17,10 @@ test('task form accepts and persists an optional estimated duration', async () =
   assert.match(form, /placeholder="例如：2h40min"/);
   assert.match(form, /data\.estimatedDuration\s*=\s*estimatedDuration/);
   assert.match(form, /预估时长格式应为/);
+  assert.match(form, /handleEstimatedDurationChange/);
+  assert.match(form, /!isDurationCustomized && parsed !== null/);
+  assert.match(form, /initialTask\?\.duration \?\? parsed \?\? 30/);
+  assert.match(form, /setIsDurationCustomized\(true\)/);
 });
 
 test('default and compact task cards display estimates as decimal hours', async () => {

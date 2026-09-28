@@ -87,3 +87,21 @@ test('minute-only adjustments preserve the original monthly anchor', () => {
   assert.equal(timed.duration, 8);
   assert.deepEqual(local(nextRepeatTask(timed, []).doDate), [2026, 3, 31]);
 });
+
+test('first timed schedule uses the estimate as the card duration', () => {
+  const backlog = { id: 'estimated', title: 'report', isCompleted: false, estimatedDuration: 160 };
+  const scheduled = rescheduleTask(backlog, new Date(2026, 8, 28), '09:00');
+  assert.equal(scheduled.duration, 160);
+
+  const nearMidnight = rescheduleTask(backlog, new Date(2026, 8, 28), '23:00');
+  assert.equal(nearMidnight.duration, 60);
+});
+
+test('explicit or previously adjusted card duration takes priority over estimate', () => {
+  const estimated = { id: 'estimated', title: 'report', isCompleted: false, estimatedDuration: 160 };
+  assert.equal(rescheduleTask(estimated, new Date(2026, 8, 28), '09:00', 45).duration, 45);
+
+  const adjusted = { ...estimated, duration: 75 };
+  assert.equal(rescheduleTask(adjusted, new Date(2026, 8, 29), '09:00').duration, 75);
+  assert.equal(rescheduleTask(estimated, new Date(2026, 8, 29), null).duration, undefined);
+});
