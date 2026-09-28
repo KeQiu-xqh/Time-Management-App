@@ -35,11 +35,11 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, o
     });
 
   return (
-    <div className="pb-20">
+    <div className="mobile-page backlog-page pb-20">
       {/* Header */}
-      <div className="sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-4 px-8 border-b border-gray-100/50">
-        <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-4">
+      <div className="mobile-page-header sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-4 px-8 border-b border-gray-100/50">
+        <div className="backlog-heading flex items-center justify-between mb-2">
+            <div className="mobile-page-title flex items-center gap-4">
                 <div className="p-3 bg-purple-100 text-purple-600 rounded-2xl">
                     <LayoutList size={28} />
                 </div>
@@ -58,11 +58,11 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, o
         </div>
       </div>
 
-      <div className="px-8 pt-8 max-w-5xl grid grid-cols-1 gap-10">
+      <div className="mobile-page-content px-8 pt-8 max-w-5xl grid grid-cols-1 gap-10">
         
         {/* Section 1: Unscheduled Pool */}
         <section className="animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-4 sticky top-32 z-30">
+            <div className="backlog-section-heading flex items-center gap-2 mb-4 sticky top-32 z-30">
                 <div className="bg-gray-100 p-1.5 rounded-lg text-gray-500">
                     <Inbox size={18} />
                 </div>

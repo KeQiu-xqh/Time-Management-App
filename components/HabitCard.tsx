@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Habit } from '../types';
+import { dateKey } from './calendarGesture';
 import { Flame, Check } from 'lucide-react';
 
 export type HabitViewMode = 'week' | 'month' | 'year';
@@ -15,7 +16,7 @@ interface HabitCardProps {
 
 export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode, viewDate, onClick }) => {
   const realToday = new Date();
-  const realTodayStr = realToday.toISOString().split('T')[0];
+  const realTodayStr = dateKey(realToday);
 
   const getDayLabel = (date: Date) => ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
 
@@ -30,9 +31,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
     });
 
     return (
-      <div className="flex justify-between items-center pt-2">
+      <div className="habit-week flex justify-between items-center pt-2">
         {days.map((date) => {
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = dateKey(date);
           const isCompleted = habit.completedDates.includes(dateStr);
           const isRealToday = dateStr === realTodayStr;
           
@@ -43,6 +44,8 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
               </span>
               
               <button
+                aria-label={`${habit.title} ${dateStr}打卡`}
+                aria-pressed={isCompleted}
                 onClick={(e) => {
                     e.stopPropagation();
                     onToggle(habit.id, dateStr);
@@ -78,17 +81,19 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
                 <div key={d} className="text-center text-[10px] text-gray-300 font-bold">{d}</div>
             ))}
          </div>
-         <div className="grid grid-cols-7 gap-y-2 gap-x-1">
+         <div className="habit-month grid grid-cols-7 gap-y-2 gap-x-1">
             {blanks.map(b => <div key={`blank-${b}`} />)}
             {monthDays.map(day => {
                 const date = new Date(year, month, day);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = dateKey(date);
                 const isCompleted = habit.completedDates.includes(dateStr);
                 const isRealToday = dateStr === realTodayStr;
 
                 return (
                     <button
                         key={dateStr}
+                        aria-label={`${habit.title} ${dateStr}打卡`}
+                        aria-pressed={isCompleted}
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggle(habit.id, dateStr);
@@ -121,7 +126,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
     }
 
     return (
-        <div className="w-full overflow-x-auto no-scrollbar pb-2">
+        <div className="habit-year w-full overflow-x-auto no-scrollbar pb-2" aria-label="年度打卡，可左右滑动">
             <div 
                 className="grid gap-1 min-w-max"
                 style={{
@@ -130,13 +135,15 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
                 }}
             >
                 {allDates.map(date => {
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = dateKey(date);
                     const isCompleted = habit.completedDates.includes(dateStr);
                     const isRealToday = dateStr === realTodayStr;
                     
                     return (
-                        <div
+                        <button
                             key={dateStr}
+                            aria-label={`${habit.title} ${dateStr}打卡`}
+                            aria-pressed={isCompleted}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onToggle(habit.id, dateStr);
@@ -166,7 +173,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
   return (
     <div 
         onClick={onClick}
-        className={`bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-200 border border-transparent hover:border-indigo-50 cursor-pointer ${viewMode === 'year' ? 'col-span-full' : ''}`}
+        className={`habit-card bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-200 border border-transparent hover:border-indigo-50 cursor-pointer ${viewMode === 'year' ? 'col-span-full' : ''}`}
     >
       <div className="flex justify-between items-start mb-4">
         <div>

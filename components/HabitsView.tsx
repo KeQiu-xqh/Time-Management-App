@@ -65,12 +65,12 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
   };
 
   return (
-    <div className="pb-20">
+    <div className="mobile-page habits-page pb-20">
       {/* Header */}
-      <div className="sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-4 px-8 border-b border-gray-100/50">
+      <div className="mobile-page-header sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-4 px-8 border-b border-gray-100/50">
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-4">
            {/* Left: Title */}
-           <div className="flex items-center gap-4">
+           <div className="mobile-page-title flex items-center gap-4">
                 <div className="p-3 bg-indigo-100 text-app-primary rounded-2xl">
                     <CheckSquare size={28} />
                 </div>
@@ -81,7 +81,7 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
            </div>
            
            {/* Right: View Switcher & Add Button */}
-           <div className="flex items-center gap-4">
+           <div className="habit-view-controls flex items-center gap-4">
               {/* Segmented Control */}
               <div className="bg-gray-100 p-1 rounded-xl flex font-bold text-sm">
                   {(['week', 'month', 'year'] as const).map((mode) => (
@@ -116,9 +116,10 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
         </div>
 
         {/* Date Navigation Bar */}
-        <div className="flex items-center justify-between bg-white rounded-xl p-2 shadow-sm border border-gray-100 max-w-md">
+        <div className="habit-date-nav flex items-center justify-between bg-white rounded-xl p-2 shadow-sm border border-gray-100 max-w-md">
             <button 
                 onClick={handlePrev}
+                aria-label="上一个周期"
                 className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
             >
                 <ChevronLeft size={20} />
@@ -131,6 +132,7 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
             <div className="flex items-center gap-1">
                 <button 
                     onClick={handleNext}
+                    aria-label="下一个周期"
                     className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                     <ChevronRight size={20} />
@@ -148,7 +150,7 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
       </div>
 
       {/* Content */}
-      <div className={`px-8 pt-6 grid grid-cols-1 gap-6 ${viewMode === 'year' ? 'max-w-full' : 'max-w-4xl md:grid-cols-2'}`}>
+      <div className={`mobile-page-content px-8 pt-6 grid grid-cols-1 gap-6 ${viewMode === 'year' ? 'max-w-full' : 'max-w-4xl md:grid-cols-2'}`}>
         {habits.map(habit => (
             <HabitCard 
                 key={habit.id} 

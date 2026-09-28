@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Task } from '../types';
+import { repeatLabel } from './recurrence';
 import { Circle, CheckCircle2, RotateCw, AlertCircle, Zap, Flame } from 'lucide-react';
 
 interface TaskCardProps {
@@ -95,16 +96,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   return (
     <div 
       onClick={() => onClick && onClick(task)}
-      className={`bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] flex items-start gap-4 transition-all duration-200 group relative cursor-pointer 
+      className={`task-card bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] flex items-start gap-4 transition-all duration-200 group relative cursor-pointer
         ${isHabit ? 'border-l-4 border-l-orange-400 border-y border-r border-transparent' : 'border border-transparent hover:border-indigo-50'}`}
     >
       {/* Checkbox Area */}
       <button 
+        aria-label={`${task.isCompleted ? '取消完成' : '完成'}：${task.title}`}
+        aria-pressed={task.isCompleted}
         onClick={(e) => {
           e.stopPropagation();
           onToggle(task.id);
         }}
-        className={`mt-0.5 flex-shrink-0 text-gray-300 hover:text-app-primary transition-colors ${task.isCompleted ? (isHabit ? 'text-orange-500' : 'text-app-primary') : ''}`}
+        className={`task-toggle mt-0.5 flex-shrink-0 text-gray-300 hover:text-app-primary transition-colors ${task.isCompleted ? (isHabit ? 'text-orange-500' : 'text-app-primary') : ''}`}
       >
         {task.isCompleted ? (
           <CheckCircle2 size={24} className={isHabit ? 'text-orange-500' : 'text-app-primary'} />
@@ -115,7 +118,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Content Area */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className="task-metadata flex items-center gap-2 mb-1.5">
           {/* Date Label (Hide for habits as they are daily) */}
           {!isHabit && (
             <span className={`text-xs font-bold ${isOverdue(task.doDate) && !task.isCompleted ? 'text-red-400' : 'text-gray-400'}`}>
@@ -145,7 +148,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Recurring Icon */}
           {task.repeat && task.repeat !== 'none' && !isHabit && (
-            <div className="flex items-center gap-0.5 text-gray-400" title={`重复: ${task.repeat}`}>
+            <div className="flex items-center gap-0.5 text-gray-400" title={repeatLabel(task)} aria-label={repeatLabel(task)}>
               <RotateCw size={12} />
             </div>
           )}
@@ -187,7 +190,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             e.stopPropagation();
             onQuickAdd(task.id);
           }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all p-2 bg-indigo-50 text-app-primary rounded-xl hover:bg-app-primary hover:text-white hover:scale-110 shadow-sm"
+          className="task-quick-plan absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all p-2 bg-indigo-50 text-app-primary rounded-xl hover:bg-app-primary hover:text-white hover:scale-110 shadow-sm"
+          aria-label={`安排到今天：${task.title}`}
           title="安排到今天"
         >
           <Zap size={18} fill="currentColor" />

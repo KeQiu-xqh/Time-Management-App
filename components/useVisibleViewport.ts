@@ -1,0 +1,21 @@
+import { useEffect } from 'react';
+
+// Mobile keyboards may shrink only the visual viewport, not 100vh/the layout viewport.
+export function useVisibleViewport() {
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const update = () => {
+      document.documentElement.style.setProperty('--visible-height', `${viewport?.height ?? window.innerHeight}px`);
+      document.documentElement.style.setProperty('--visible-top', `${viewport?.offsetTop ?? 0}px`);
+    };
+    update();
+    viewport?.addEventListener('resize', update);
+    viewport?.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    return () => {
+      viewport?.removeEventListener('resize', update);
+      viewport?.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+}

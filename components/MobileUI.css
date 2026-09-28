@@ -1,0 +1,98 @@
+/* Only the newly expanded custom-repeat form needs a desktop overflow guard. */
+@media (min-width: 768px) {
+  .app-modal-shell:has(.repeat-custom) { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+  .app-modal-shell:has(.repeat-custom) .app-modal-header { flex-shrink: 0; }
+  .app-modal-shell:has(.repeat-custom) .app-modal-body { min-height: 0; overflow-y: auto; }
+  .app-modal-shell:has(.repeat-custom) .task-editor { height: auto; }
+}
+/* Existing page layouts are adjusted only below the desktop breakpoint. */
+@media (max-width: 767.98px) {
+  .mobile-page { padding-bottom: 24px; min-width: 0; }
+  .mobile-page-header { position: relative; padding: 20px 14px 12px; z-index: auto; backdrop-filter: none; }
+  .mobile-page-title { gap: 12px; min-width: 0; }
+  .mobile-page-title > :first-child { flex-shrink: 0; padding: 10px; border-radius: 14px; }
+  .mobile-page-title > :last-child { min-width: 0; }
+  .mobile-page-title h2 { font-size: 24px; line-height: 32px; }
+  .mobile-page-title p { font-size: 12px; line-height: 20px; }
+  .mobile-page-content { padding: 16px 12px 0; gap: 24px; min-width: 0; }
+  .backlog-heading { flex-wrap: wrap; gap: 12px; }
+  .backlog-heading > button { min-height: 44px; white-space: nowrap; padding: 8px 12px; margin-left: auto; }
+  .backlog-section-heading { position: static; }
+  .mobile-page-content section > div:has(> h3) { flex-wrap: wrap; row-gap: 6px; }
+  .mobile-page-content h3 { font-size: 16px; }
+  .task-card { padding: 12px 10px; gap: 8px; min-width: 0; }
+  .task-card h3 { font-size: 15px; overflow-wrap: anywhere; }
+  .task-toggle { display: grid; place-items: center; width: 40px; height: 44px; margin-top: 0; }
+  .task-metadata { flex-wrap: wrap; gap: 4px 6px; }
+  .task-metadata > span { max-width: 100%; overflow-wrap: anywhere; }
+  .task-quick-plan { position: static; transform: none; opacity: 1; flex: none; width: 40px; min-height: 44px; display: grid; place-items: center; align-self: center; }
+  .habit-view-controls { gap: 8px; justify-content: space-between; }
+  .habit-view-controls button { min-height: 40px; }
+  .habit-view-controls > button { padding: 8px 14px; min-height: 44px; }
+  .habit-date-nav { padding: 4px; gap: 2px; }
+  .habit-date-nav button { min-height: 40px; padding: 8px; flex-shrink: 0; }
+  .habit-date-nav > div:first-of-type { font-size: 12px; letter-spacing: 0; text-align: center; }
+  .habit-date-nav > div:last-child { gap: 0; }
+  .habit-date-nav > div:last-child > div { display: none; }
+  .habit-card { padding: 16px 10px; min-width: 0; }
+  .habit-card h3 { overflow-wrap: anywhere; }
+  .habit-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .habit-week > div { min-width: 0; }
+  .habit-week button { width: 100%; max-width: 44px; height: 44px; border-radius: 12px; }
+  .habit-month button { min-height: 40px; }
+  .habit-year { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .habit-year button { width: 32px; height: 32px; border-radius: 6px; }
+  .categories-page { padding-bottom: 90px; }
+  .category-tabs { gap: 8px; padding: 4px 2px 8px; }
+  .category-tabs > button { min-height: 44px; }
+  .category-tabs > button:last-child { min-width: 44px; }
+  .category-tabs [role=button] { padding: 10px; }
+  .category-add-form { gap: 12px; }
+  .category-add-form input { min-width: 0; min-height: 44px; font-size: 16px; }
+  .category-add-form button { min-width: 36px; min-height: 36px; }
+  .category-add-form button[type=submit] { min-height: 44px; width: 100%; }
+  .category-section-heading { flex-wrap: wrap; gap: 8px; }
+  .category-section-heading > button { min-height: 40px; }
+  .category-create-button { bottom: calc(90px + env(safe-area-inset-bottom)); right: 16px; }
+  .settings-content { min-width: 0; }
+  .settings-content > section + section { margin-top: 24px; }
+  .settings-content button { min-height: 44px; flex-shrink: 0; }
+  .app-modal-overlay, .category-editor-overlay {
+    top: var(--visible-top, 0px);
+    bottom: auto;
+    height: var(--visible-height, 100dvh);
+    padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  }
+  .app-modal-shell {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    width: 100%;
+    min-height: 0;
+  }
+  .app-modal-shell:has(.task-editor) { height: min(740px, 100%); }
+  .app-modal-header { flex: none; padding: 10px 14px; }
+  .app-modal-header button { min-width: 40px; min-height: 40px; }
+  .app-modal-body { min-height: 0; overflow-y: auto; padding: 14px; overscroll-behavior: contain; }
+  .app-modal-body:has(.task-editor) { flex: 1; display: flex; overflow: hidden; padding-bottom: 0; }
+  .task-editor { flex: 1; min-width: 0; min-height: 0; height: auto; }
+  .task-editor > div { flex-shrink: 0; margin-bottom: 12px; }
+  .task-editor-form { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 0; }
+  .task-editor-fields { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 2px 16px; -webkit-overflow-scrolling: touch; }
+  .task-editor-fields > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
+  .task-editor-fields .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 16px; }
+  .task-editor-fields .grid { gap: 8px; }
+  .task-editor-fields .grid > div { min-width: 0; }
+  .task-editor-footer { flex: none; margin: 0; padding: 10px 0; background: white; gap: 4px; }
+  .task-editor-footer button { min-height: 44px; padding: 8px 12px; font-size: 14px; white-space: nowrap; }
+  .task-editor-footer > div:last-child { gap: 4px; }
+  .app-modal-body input, .app-modal-body select, .category-editor-overlay input {
+    min-width: 0; max-width: 100%; min-height: 44px; font-size: 16px;
+  }
+  .app-modal-body input[type=date], .app-modal-body input[type=time] { padding-left: 8px; padding-right: 6px; }
+  .app-modal-body button[role=switch] { min-width: 44px; min-height: 26px; }
+  .category-editor-overlay { z-index: 100; overflow-y: auto; }
+  .category-editor-overlay > div { max-height: 100%; overflow-y: auto; padding: 18px; }
+  .category-editor-overlay button { min-width: 40px; min-height: 40px; }
+  .repeat-custom .grid { gap: 3px; }
+}

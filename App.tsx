@@ -11,6 +11,10 @@ import { Modal } from './components/Modal';
 import { AddTaskModal, UnifiedItemType, UnifiedItemData } from './components/AddTaskModal';
 import { DailyReviewModal } from './components/DailyReviewModal';
 import { SettingsModal } from './components/SettingsModal';
+import { useVisibleViewport } from './components/useVisibleViewport';
+import './components/MobileUI.css';
+import { nextRepeatTask, rescheduleTask } from './components/recurrence';
+import { dateKey } from './components/calendarGesture';
 
 // --- Utility: Date Reviver for JSON.parse ---
 const dateReviver = (key: string, value: any) => {
@@ -23,6 +27,7 @@ const dateReviver = (key: string, value: any) => {
 const DEFAULT_CATEGORIES: Record<string, Category> = {};
 
 const App: React.FC = () => {
+  useVisibleViewport();
   // --- 1. Centralized State Management ---
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Calendar);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,7 +175,9 @@ const App: React.FC = () => {
         deadline: taskData.deadline,
         startTime: taskData.startTime,
         duration: taskData.duration,
-        repeat: taskData.repeat
+        repeat: taskData.repeat,
+        repeatRule: taskData.repeatRule,
+        repeatAnchorDate: taskData.repeatAnchorDate
       };
       setTasks(prev => [...prev, newTask]);
 
@@ -238,7 +245,7 @@ const App: React.FC = () => {
       let streak = 0;
       const today = new Date();
       today.setHours(0,0,0,0);
-      const todayStr = today.toISOString().split('T')[0];
+      const todayStr = dateKey(today);
 
       let checkDate = new Date(today);
       let currentAnchor: Date | null = null;
@@ -248,7 +255,7 @@ const App: React.FC = () => {
       } else {
          const yesterday = new Date(today);
          yesterday.setDate(yesterday.getDate() - 1);
-         const yesterdayStr = yesterday.toISOString().split('T')[0];
+         const yesterdayStr = dateKey(yesterday);
          if (sortedDates.includes(yesterdayStr)) {
             currentAnchor = yesterday;
          }
@@ -256,7 +263,7 @@ const App: React.FC = () => {
 
       if (currentAnchor) {
          while (true) {
-            const str = currentAnchor.toISOString().split('T')[0];
+            const str = dateKey(currentAnchor);
             if (sortedDates.includes(str)) {
                 streak++;
                 currentAnchor.setDate(currentAnchor.getDate() - 1);
@@ -281,7 +288,7 @@ const App: React.FC = () => {
 
       // --- Sync Habit if applicable ---
       if (taskToToggle.originalHabitId && isNowCompleted && taskToToggle.doDate) {
-          const dateStr = new Date(taskToToggle.doDate).toISOString().split('T')[0];
+          const dateStr = dateKey(new Date(taskToToggle.doDate));
           setTimeout(() => {
               const habit = habits.find(h => h.id === taskToToggle.originalHabitId);
               if (habit && !habit.completedDates.includes(dateStr)) {
@@ -294,36 +301,9 @@ const App: React.FC = () => {
         t.id === id ? { ...t, isCompleted: isNowCompleted } : t
       );
 
-      // Recurring Logic
-      if (
-          isNowCompleted && 
-          taskToToggle.repeat && 
-          taskToToggle.repeat !== 'none' && 
-          taskToToggle.doDate
-      ) {
-          const nextDate = new Date(taskToToggle.doDate);
-          if (taskToToggle.repeat === 'daily') nextDate.setDate(nextDate.getDate() + 1);
-          else if (taskToToggle.repeat === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
-          else if (taskToToggle.repeat === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
-
-          let nextDeadline = undefined;
-          if (taskToToggle.deadline) {
-             const d = new Date(taskToToggle.deadline);
-             if (taskToToggle.repeat === 'daily') d.setDate(d.getDate() + 1);
-             else if (taskToToggle.repeat === 'weekly') d.setDate(d.getDate() + 7);
-             else if (taskToToggle.repeat === 'monthly') d.setMonth(d.getMonth() + 1);
-             nextDeadline = d;
-          }
-
-          const nextTask: Task = {
-              ...taskToToggle,
-              id: Math.random().toString(36).substr(2, 9),
-              isCompleted: false,
-              doDate: nextDate,
-              deadline: nextDeadline,
-          };
-
-          nextTasks = [...nextTasks, nextTask];
+      if (isNowCompleted) {
+          const nextTask = nextRepeatTask(taskToToggle, prev);
+          if (nextTask) nextTasks = [...nextTasks, nextTask];
       }
 
       return nextTasks;
@@ -332,20 +312,13 @@ const App: React.FC = () => {
 
   const handleQuickPlan = (id: string) => {
     setTasks(prev => prev.map(t => 
-      t.id === id ? { ...t, doDate: new Date() } : t
+      t.id === id ? rescheduleTask(t, new Date()) : t
     ));
     setActiveTab(Tab.Calendar);
   };
 
-  const handleScheduleTask = (id: string, date: Date, startTime?: string | null) => {
-      setTasks(prev => prev.map(t => {
-        if (t.id !== id) return t;
-        const updates: Partial<Task> = { doDate: date };
-        if (startTime !== undefined) {
-            updates.startTime = startTime === null ? undefined : startTime;
-        }
-        return { ...t, ...updates };
-      }));
+  const handleScheduleTask = (id: string, date: Date, startTime?: string | null, duration?: number) => {
+      setTasks(prev => prev.map(t => t.id === id ? rescheduleTask(t, date, startTime, duration) : t));
   };
 
   // Convert Habit Dragged to Timeline into a Task Instance
@@ -481,20 +454,20 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-app-bg text-app-text font-sans selection:bg-indigo-100 overflow-hidden">
+    <div className="flex h-[100dvh] bg-app-bg text-app-text font-sans selection:bg-indigo-100 overflow-hidden">
       <Sidebar 
         currentTab={activeTab} 
         onSwitch={setActiveTab} 
         userName={userName}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
-      <main className="flex-1 h-full overflow-hidden bg-app-bg relative flex flex-col">
+      <main className="flex-1 min-w-0 h-full overflow-hidden bg-app-bg relative flex flex-col">
         {activeTab === Tab.Calendar ? (
-           <div className="flex-1 w-full overflow-hidden pb-[80px] md:pb-0">
+           <div className="flex-1 min-h-0 w-full overflow-hidden pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
               {renderContent()}
            </div>
         ) : (
-           <div className="h-full w-full overflow-y-auto no-scrollbar pb-[80px] md:pb-0">
+           <div className="h-full w-full overflow-y-auto no-scrollbar pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
               <div className="max-w-7xl mx-auto min-h-full">
                 {renderContent()}
               </div>

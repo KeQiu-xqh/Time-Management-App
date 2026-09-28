@@ -1,7 +1,9 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { dateKey } from './calendarGesture';
 import { Task, Habit } from '../types';
 import { TaskCard } from './TaskCard';
+import { MobileCalendar } from './MobileCalendar';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid, AlertCircle, ArrowLeft, Inbox, List, AlignLeft, Clock, History, Flame, Eye, EyeOff } from 'lucide-react';
 
 interface CalendarViewProps {
@@ -12,7 +14,7 @@ interface CalendarViewProps {
   onAddTask: () => void;
   onEditTask: (task: Task) => void;
   onEditHabit: (habit: Habit) => void; // New prop
-  onScheduleTask: (id: string, date: Date, startTime?: string | null) => void;
+  onScheduleTask: (id: string, date: Date, startTime?: string | null, duration?: number) => void;
   onUnscheduleTask: (id: string) => void;
   onConvertHabitToTask: (habitId: string, date: Date, startTime: string) => void; // New prop
 }
@@ -39,6 +41,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [isMobileBacklogOpen, setIsMobileBacklogOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const weekTimelineScrollRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767.98px)').matches);
+  useEffect(() => {
+      const media = window.matchMedia('(max-width: 767.98px)');
+      const update = () => setIsMobile(media.matches);
+      media.addEventListener('change', update);
+      return () => media.removeEventListener('change', update);
+  }, []);
 
   // --- Date Helpers ---
   const getStartOfWeek = (d: Date) => {
@@ -253,7 +262,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       const isHabit = habits.some(h => h.id === id);
       if (isHabit) {
           const d = date || selectedDate;
-          const dateStr = d.toISOString().split('T')[0];
+          const dateStr = dateKey(d);
           onToggleHabit(id, dateStr);
       } else {
           onToggleTask(id);
@@ -279,7 +288,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   }, [tasks, selectedDate]);
 
   const habitTasks = useMemo(() => {
-      const dateStr = selectedDate.toISOString().split('T')[0];
+      const dateStr = dateKey(selectedDate);
       return habits.map(h => ({
           id: h.id,
           title: h.title,
@@ -399,7 +408,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   {days.map((d, i) => {
                       const isCurrentMonth = d.getMonth() === selectedDate.getMonth();
                       const isTodayDate = isToday(d);
-                      const dateStr = d.toISOString().split('T')[0];
+                      const dateStr = dateKey(d);
                       
                       // Filter Tasks
                       const dayTasks = tasks.filter(t => t.doDate && isSameDay(new Date(t.doDate), d));
@@ -776,7 +785,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                const dayHabits = habits.filter(h => h.defaultTime).map(h => ({
                                    id: h.id,
                                    title: h.title,
-                                   isCompleted: h.completedDates.includes(d.date.toISOString().split('T')[0]),
+                                   isCompleted: h.completedDates.includes(dateKey(d.date)),
                                    doDate: d.date,
                                    isHabit: true,
                                    streak: h.streak,
@@ -845,6 +854,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
     );
   };
+
+  if (isMobile) return <MobileCalendar tasks={tasks} habits={habits} onScheduleTask={onScheduleTask}
+      onToggleTask={onToggleTask}
+      onUnscheduleTask={onUnscheduleTask} onEditTask={onEditTask} onEditHabit={onEditHabit}
+      onToggleHabit={onToggleHabit} onAddTask={onAddTask} />;
 
   return (
     <div className="h-full w-full flex overflow-hidden">

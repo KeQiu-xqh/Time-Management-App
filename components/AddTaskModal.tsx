@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Category, Task, Habit, RepeatFrequency } from '../types';
+import { Category, Task, Habit, RepeatFrequency, RepeatRule } from '../types';
+import { repeatLabel } from './recurrence';
+import { durationFromTimes, endTimeForDuration } from './calendarGesture';
 import { Calendar as CalendarIcon, Tag, Clock, AlertTriangle, Trash2, Timer, RotateCw, CheckSquare, LayoutList, RefreshCw } from 'lucide-react';
 
 export type UnifiedItemType = 'task' | 'habit';
@@ -14,6 +16,8 @@ export interface UnifiedItemData {
     startTime?: string;
     duration?: number;
     repeat?: RepeatFrequency;
+    repeatRule?: RepeatRule;
+    repeatAnchorDate?: string;
     // Habit specific
     frequency?: 'daily' | 'weekly';
     defaultTime?: string;
@@ -57,6 +61,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:30'); // New State for End Time
   const [repeat, setRepeat] = useState<RepeatFrequency>('none');
+  const [repeatInterval, setRepeatInterval] = useState('1');
+  const [repeatUnit, setRepeatUnit] = useState<RepeatRule['unit']>('day');
+  const [repeatWeekdays, setRepeatWeekdays] = useState<number[]>([new Date().getDay()]);
+  const [repeatUntil, setRepeatUntil] = useState('');
 
   // Habit Fields
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
@@ -75,19 +83,6 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     if (!dateStr) return undefined;
     const [y, m, d] = dateStr.split('-').map(Number);
     return new Date(y, m - 1, d);
-  };
-
-  const addMinutesToTime = (time: string, minutes: number) => {
-      const [h, m] = time.split(':').map(Number);
-      const date = new Date();
-      date.setHours(h, m + minutes);
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-  };
-
-  const getDurationInMinutes = (start: string, end: string) => {
-      const [h1, m1] = start.split(':').map(Number);
-      const [h2, m2] = end.split(':').map(Number);
-      return (h2 * 60 + m2) - (h1 * 60 + m1);
   };
 
   // --- Initialization ---
@@ -126,13 +121,17 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           setStartTime(task.startTime);
           // Calculate End Time
           const duration = task.duration || 30;
-          setEndTime(addMinutesToTime(task.startTime, duration));
+          setEndTime(endTimeForDuration(task.startTime, duration));
       } else {
           setIsTimeSet(false);
           setStartTime('09:00');
           setEndTime('09:30');
       }
       setRepeat(task.repeat || 'none');
+      setRepeatInterval(String(task.repeatRule?.interval || 1));
+      setRepeatUnit(task.repeatRule?.unit || 'day');
+      setRepeatWeekdays(task.repeatRule?.weekdays || [task.doDate?.getDay() ?? new Date().getDay()]);
+      setRepeatUntil(task.repeatRule?.until || '');
   };
 
   const loadHabitData = (habit: Habit) => {
@@ -152,6 +151,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setStartTime('09:00');
       setEndTime('09:30');
       setRepeat('none');
+      setRepeatInterval('1');
+      setRepeatUnit('day');
+      setRepeatWeekdays([new Date().getDay()]);
+      setRepeatUntil('');
       setHabitFrequency('daily');
       setHabitDefaultTime('');
   };
@@ -161,23 +164,36 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const isConflict = activeType === 'task' && doDateObj && deadlineObj && doDateObj > deadlineObj;
   
   // Time Validation
-  const isTimeInvalid = isTimeSet && getDurationInMinutes(startTime, endTime) <= 0;
+  const duration = durationFromTimes(startTime, endTime);
+  const isTimeInvalid = isTimeSet && (!Number.isFinite(duration) || duration <= 0);
+  const customRule: RepeatRule = {
+      interval: Number(repeatInterval), unit: repeatUnit,
+      weekdays: repeatUnit === 'week' ? repeatWeekdays : undefined,
+      until: repeatUntil || undefined,
+  };
+  const repeatError = activeType === 'task' && repeat === 'custom'
+      ? !Number.isInteger(customRule.interval) || customRule.interval < 1 || customRule.interval > 999
+        ? '重复间隔需要为 1–999 的整数'
+        : repeatUnit === 'week' && repeatWeekdays.length === 0 ? '请至少选择一个星期'
+        : repeatUntil && doDateStr && repeatUntil < doDateStr ? '结束重复日期不能早于执行日期' : ''
+      : '';
 
   // --- Handlers ---
   const handleStartTimeChange = (newStart: string) => {
-      const oldDuration = getDurationInMinutes(startTime, endTime);
+      const oldDuration = durationFromTimes(startTime, endTime);
       setStartTime(newStart);
       // Maintain duration
       if (oldDuration > 0) {
-          setEndTime(addMinutesToTime(newStart, oldDuration));
+          setEndTime(endTimeForDuration(newStart, oldDuration));
       } else {
-          setEndTime(addMinutesToTime(newStart, 30));
+          setEndTime(endTimeForDuration(newStart, 30));
       }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    if (repeatError) return;
     if (activeType === 'task' && isTimeSet && isTimeInvalid) return; // Block invalid time
 
     const category = selectedCategoryKey ? categories[selectedCategoryKey] : undefined;
@@ -192,12 +208,16 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
         data.deadline = parseDate(deadlineStr);
         if (isTimeSet) {
             data.startTime = startTime;
-            data.duration = getDurationInMinutes(startTime, endTime);
+            data.duration = duration;
         } else {
             data.startTime = undefined;
             data.duration = undefined;
         }
         data.repeat = repeat;
+        data.repeatRule = repeat === 'custom' ? customRule : undefined;
+        const sameSchedule = initialTask && formatDateToLocal(initialTask.doDate) === doDateStr
+            && initialTask.repeat === repeat && JSON.stringify(initialTask.repeatRule) === JSON.stringify(data.repeatRule);
+        data.repeatAnchorDate = sameSchedule ? initialTask.repeatAnchorDate : doDateStr || undefined;
     } else {
         data.frequency = habitFrequency;
         data.defaultTime = habitDefaultTime || undefined;
@@ -216,7 +236,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="task-editor flex flex-col h-full">
       {/* Type Switcher (Only if creating new) */}
       {!isEditing && (
           <div className="flex p-1 bg-gray-100 rounded-xl mb-6 select-none">
@@ -255,7 +275,8 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6 flex-1 overflow-y-auto px-1 no-scrollbar pb-1">
+      <form onSubmit={handleSubmit} className="task-editor-form flex-1 overflow-y-auto px-1 no-scrollbar pb-1">
+        <div className="task-editor-fields space-y-6">
         {/* Title Input (Common) */}
         <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -267,7 +288,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             placeholder={activeType === 'task' ? "准备做什么？" : "例如：早起、健身..."}
             className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-app-primary/50 focus:ring-4 focus:ring-app-primary/10 transition-all outline-none text-gray-800 placeholder-gray-400 font-medium"
-            autoFocus
+            autoFocus={!window.matchMedia('(max-width: 767.98px)').matches}
             />
         </div>
 
@@ -292,7 +313,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
         {/* --- TASK SPECIFIC FIELDS --- */}
         {activeType === 'task' && (
             <div className="space-y-6 animate-fade-in">
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="task-date-fields grid grid-cols-2 gap-4">
                     {/* Do Date */}
                     <div>
                         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
@@ -300,6 +321,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             执行日期
                         </label>
                         <input
+                            aria-label="执行日期"
                             type="date"
                             value={doDateStr}
                             onChange={(e) => setDoDateStr(e.target.value)}
@@ -313,6 +335,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             截止日期
                         </label>
                         <input
+                            aria-label="截止日期"
                             type="date"
                             value={deadlineStr}
                             onChange={(e) => setDeadlineStr(e.target.value)}
@@ -332,21 +355,31 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             const labels = { none: '不重复', daily: '每天', weekly: '每周', monthly: '每月' };
                             const isSelected = repeat === option;
                             return (
-                                <button
-                                    key={option}
-                                    type="button"
-                                    onClick={() => setRepeat(option)}
-                                    className={`py-2 rounded-lg text-xs font-bold transition-all border ${
-                                        isSelected 
-                                        ? 'bg-indigo-50 text-app-primary border-indigo-100 shadow-sm' 
-                                        : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'
-                                    }`}
-                                >
+                                <button key={option} type="button" aria-pressed={isSelected} onClick={() => setRepeat(option)}
+                                    className={`py-2 rounded-lg text-xs font-bold transition-all border ${isSelected
+                                        ? 'bg-indigo-50 text-app-primary border-indigo-100 shadow-sm'
+                                        : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'}`}>
                                     {labels[option]}
                                 </button>
                             );
                         })}
                     </div>
+                    <button type="button" aria-pressed={repeat === 'custom'} onClick={() => setRepeat('custom')}
+                        className={`mt-2 w-full rounded-lg border py-2 text-sm font-bold ${repeat === 'custom' ? 'bg-indigo-50 text-app-primary border-indigo-100' : 'bg-white text-gray-500 border-gray-100'}`}>
+                        自定义重复
+                    </button>
+                    {repeat === 'custom' && <div className="repeat-custom mt-3 space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                        <div className="flex items-center gap-2"><span>每</span><input aria-label="重复间隔" type="number" min="1" max="999" step="1" value={repeatInterval} onChange={e => setRepeatInterval(e.target.value)} className="w-20 rounded-lg border border-gray-200 bg-white px-2 py-2" />
+                            <select aria-label="重复单位" value={repeatUnit} onChange={e => setRepeatUnit(e.target.value as RepeatRule['unit'])} className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-2"><option value="day">天</option><option value="week">周</option><option value="month">个月</option></select>
+                        </div>
+                        {repeatUnit === 'week' && <div><p className="mb-2 text-xs text-gray-500">在这些星期重复</p><div className="grid grid-cols-7 gap-1">{[1, 2, 3, 4, 5, 6, 0].map(day => <button key={day} type="button" aria-label={`每周${['日', '一', '二', '三', '四', '五', '六'][day]}`} aria-pressed={repeatWeekdays.includes(day)}
+                            onClick={() => setRepeatWeekdays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort())}
+                            className={`min-h-[40px] rounded-lg text-sm ${repeatWeekdays.includes(day) ? 'bg-app-primary text-white' : 'bg-white text-gray-500'}`}>{['日', '一', '二', '三', '四', '五', '六'][day]}</button>)}</div></div>}
+                        <label className="block text-xs text-gray-600">结束重复（留空表示一直重复）<input aria-label="结束重复日期" type="date" min={doDateStr || undefined} value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-2 py-2" /></label>
+                        <p className="text-xs leading-relaxed text-indigo-500">{repeatLabel({ repeat, repeatRule: customRule })}。完成当前任务后生成下一次。{!doDateStr && '设置执行日期后才会生成后续任务。'}</p>
+                        {repeatUnit === 'month' && <p className="text-xs text-gray-500">按执行日重复；当月没有这一天时，安排到月末。</p>}
+                    </div>}
+                    {repeatError && <p role="alert" className="mt-2 text-xs text-red-500">{repeatError}</p>}
                 </div>
 
                 {/* Time Settings */}
@@ -356,12 +389,12 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             <Timer size={16} className="text-gray-400" />
                             具体时间设置
                         </label>
-                        <div 
+                        <button type="button" role="switch" aria-checked={isTimeSet} aria-label="具体时间设置"
                             onClick={() => setIsTimeSet(!isTimeSet)}
                             className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${isTimeSet ? 'bg-app-primary' : 'bg-gray-300'}`}
                         >
                             <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isTimeSet ? 'translate-x-4' : ''}`}></div>
-                        </div>
+                        </button>
                     </div>
 
                     {isTimeSet && (
@@ -369,6 +402,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">开始时间</label>
                                 <input 
+                                    aria-label="开始时间"
                                     type="time" 
                                     value={startTime}
                                     onChange={(e) => handleStartTimeChange(e.target.value)}
@@ -378,6 +412,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">结束时间</label>
                                 <input 
+                                    aria-label="结束时间"
                                     type="time" 
                                     value={endTime}
                                     onChange={(e) => setEndTime(e.target.value)}
@@ -389,6 +424,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                         </div>
                     )}
                     
+                    {isTimeSet && endTime === '00:00' && <p className="mt-2 text-xs text-gray-500">结束 00:00 表示当天结束（次日零点）。</p>}
                     {isTimeSet && isTimeInvalid && (
                         <div className="mt-2 text-xs text-red-500 font-bold flex items-center gap-1">
                             <AlertTriangle size={12} />
@@ -473,8 +509,9 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
              </div>
         )}
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+        </div>
+        {/* Kept outside the scrollable fields so confirmation stays reachable on phones. */}
+        <div className="task-editor-footer flex items-center justify-between pt-4 border-t border-gray-100 mt-6">
              <div>
                 {isEditing && (
                     <button
@@ -498,7 +535,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 </button>
                 <button
                 type="submit"
-                disabled={!title.trim()}
+                disabled={!title.trim() || !!repeatError || (activeType === 'task' && isTimeInvalid)}
                 className={`px-6 py-2.5 rounded-xl text-white font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none ${
                     isConflict 
                     ? 'bg-red-500 shadow-red-200' 

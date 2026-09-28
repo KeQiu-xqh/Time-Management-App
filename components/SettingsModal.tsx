@@ -98,7 +98,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
   };
 
   return (
-    <div className="space-y-8">
+    <div className="settings-content space-y-8">
       {/* Profile Section */}
       <section>
         <h3 className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
@@ -114,6 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
             className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-app-primary/20 focus:border-app-primary outline-none text-gray-800 font-medium"
           />
           <button
+            aria-label="保存昵称"
             onClick={handleSave}
             disabled={!name.trim() || name === currentName}
             className="px-4 py-2 bg-app-primary text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-200"

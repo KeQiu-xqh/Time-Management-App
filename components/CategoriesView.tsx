@@ -104,10 +104,10 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
   };
 
   return (
-    <div className="pb-24 relative min-h-full">
+    <div className="mobile-page categories-page pb-24 relative min-h-full">
        {/* Header */}
-      <div className="sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-2 px-8 border-b border-gray-100/50">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="mobile-page-header sticky top-0 bg-app-bg/95 backdrop-blur-sm z-40 pt-8 pb-2 px-8 border-b border-gray-100/50">
+        <div className="mobile-page-title flex items-center gap-4 mb-6">
             <div className="p-3 bg-amber-100 text-amber-600 rounded-2xl">
                 <Layers size={28} />
             </div>
@@ -118,7 +118,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
         </div>
 
         {/* Tab Bar - Horizontal Scroll */}
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+        <div className="category-tabs flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
             {/* 'ALL' Tab */}
             <button
                 onClick={() => setActiveCategoryId('ALL')}
@@ -147,14 +147,16 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                         {cat.name}
                         {isActive && (
                             <div className="flex items-center gap-1 ml-1 pl-1 border-l border-black/10">
-                                <div 
+                                <div role="button" tabIndex={0} aria-label={`编辑分类：${cat.name}`}
+                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleEditClick(cat); } }}
                                     onClick={(e) => { e.stopPropagation(); handleEditClick(cat); }}
                                     className="p-1 rounded-full hover:bg-black/10 transition-colors"
                                     title="编辑分类"
                                 >
                                     <Pencil size={12} strokeWidth={3} />
                                 </div>
-                                <div 
+                                <div role="button" tabIndex={0} aria-label={`删除分类：${cat.name}`}
+                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleDeleteCurrent(); } }}
                                     onClick={(e) => { e.stopPropagation(); handleDeleteCurrent(); }}
                                     className="p-1 rounded-full hover:bg-black/10 transition-colors"
                                     title="删除分类"
@@ -182,9 +184,9 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
         {/* Inline Add Category Form */}
         {isAddingCat && (
             <div className="mt-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 animate-fade-in-up">
-                <form onSubmit={handleAddCategorySubmit} className="flex flex-col md:flex-row gap-4 items-center">
+                <form onSubmit={handleAddCategorySubmit} className="category-add-form flex flex-col md:flex-row gap-4 items-center">
                     <input
-                        autoFocus
+                        autoFocus={!window.matchMedia('(max-width: 767.98px)').matches}
                         type="text"
                         value={newCatName}
                         onChange={(e) => setNewCatName(e.target.value)}
@@ -195,6 +197,8 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                          {CATEGORY_COLORS.slice(0, 5).map((color, idx) => (
                             <button
                                 key={idx}
+                                aria-label={`分类颜色 ${idx + 1}`}
+                                aria-pressed={selectedColorIndex === idx}
                                 type="button"
                                 onClick={() => setSelectedColorIndex(idx)}
                                 className={`w-6 h-6 rounded-full ${color.bg} border-2 transition-all ${selectedColorIndex === idx ? 'border-gray-800 scale-125' : 'border-transparent'}`}
@@ -214,14 +218,15 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
 
         {/* Edit Category Modal Overlay */}
         {editingCategory && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+            <div className="category-editor-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
+                <div role="dialog" aria-modal="true" aria-label="编辑分类" className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
                     <h3 className="text-xl font-bold text-gray-800 mb-4">编辑分类</h3>
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase mb-1">名称</label>
                             <input
-                                autoFocus
+                                autoFocus={!window.matchMedia('(max-width: 767.98px)').matches}
+                                aria-label="分类名称"
                                 type="text"
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
@@ -234,6 +239,8 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                                 {CATEGORY_COLORS.map((color, idx) => (
                                     <button
                                         key={idx}
+                                        aria-label={`分类颜色 ${idx + 1}`}
+                                        aria-pressed={editColorIndex === idx}
                                         type="button"
                                         onClick={() => setEditColorIndex(idx)}
                                         className={`w-8 h-8 rounded-full ${color.bg} border-2 transition-all ${editColorIndex === idx ? 'border-gray-800 scale-110 shadow-md' : 'border-transparent hover:scale-105'}`}
@@ -264,7 +271,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
       </div>
 
       {/* Main Content Area */}
-      <div className="px-8 pt-6 max-w-5xl space-y-10">
+      <div className="mobile-page-content px-8 pt-6 max-w-5xl space-y-10">
         
         {/* --- 1. Habits Section (Top) --- */}
         {filteredHabits.length > 0 && (
@@ -299,7 +306,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
         {/* --- 2. Tasks Section (Bottom) --- */}
         <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             {/* Header with Toggle */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="category-section-heading flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                    <Layers size={18} className="text-gray-500" />
                    <h3 className="text-lg font-bold text-gray-800">待办任务 <span className="text-sm font-normal text-gray-400">Tasks</span></h3>
@@ -365,7 +372,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
       </div>
 
       {/* Context-Aware Add Button */}
-      <div className="fixed bottom-24 right-8 z-50">
+      <div className="category-create-button fixed bottom-24 right-8 z-50">
           <button
             onClick={handleCreateInContext}
             className="flex items-center gap-2 bg-gray-900 text-white px-5 py-3.5 rounded-2xl shadow-xl shadow-gray-300 hover:scale-105 hover:bg-black transition-all active:scale-95"

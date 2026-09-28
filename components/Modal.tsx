@@ -20,7 +20,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="app-modal-overlay fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm transition-opacity"
@@ -28,11 +28,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
       ></div>
 
       {/* Content */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
+      <div role="dialog" aria-modal="true" aria-label={title || '每日回顾'} className="app-modal-shell relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="app-modal-header flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-800">{title}</h3>
           <button 
+            aria-label="关闭弹窗"
             onClick={onClose}
             className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
           >
@@ -41,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="app-modal-body p-6">
           {children}
         </div>
       </div>

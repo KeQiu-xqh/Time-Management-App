@@ -13,7 +13,14 @@ export interface Category {
   colorText: string; // Tailwind class, e.g., 'text-purple-600'
 }
 
-export type RepeatFrequency = 'none' | 'daily' | 'weekly' | 'monthly';
+export type RepeatFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
+
+export interface RepeatRule {
+  interval: number;
+  unit: 'day' | 'week' | 'month';
+  weekdays?: number[]; // Local weekday: Sunday = 0.
+  until?: string; // Inclusive local YYYY-MM-DD, omitted for no end date.
+}
 
 export interface Task {
   id: string;
@@ -23,6 +30,9 @@ export interface Task {
   doDate?: Date; // Optional: If undefined, it's in the Backlog
   deadline?: Date; // The hard deadline
   repeat?: RepeatFrequency; // 'none', 'daily', 'weekly', 'monthly'
+  repeatRule?: RepeatRule;
+  repeatAnchorDate?: string;
+  repeatParentId?: string; // Prevent duplicate successors after unchecking/rechecking.
   
   // New Time Fields
   startTime?: string; // "HH:MM", e.g. "14:30"
