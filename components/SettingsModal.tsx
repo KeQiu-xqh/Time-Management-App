@@ -1,16 +1,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Database, Info, Trash2, Save, Download, Upload } from 'lucide-react';
+import { decodeBackup, encodeSnapshot, type PlanSnapshot } from '../data/planSnapshot';
+import { SyncSettings } from './SyncSettings';
+import type { CloudSyncController } from '../sync/useCloudSync';
+import { WechatLogin } from './WechatLogin';
+import type { WechatLoginController } from '../auth/useWechatLogin';
 
 interface SettingsModalProps {
   currentName: string;
+  snapshot: PlanSnapshot;
+  sync: CloudSyncController;
+  wechatLogin: WechatLoginController;
   onSaveName: (name: string) => void;
-  onResetData: () => void;
+  onImportSnapshot: (snapshot: PlanSnapshot) => Promise<void>;
+  onResetData: () => Promise<void>;
   onClearCompleted: () => void;
   onClose: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSaveName, onResetData, onClearCompleted, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snapshot, sync, wechatLogin, onSaveName, onImportSnapshot, onResetData, onClearCompleted, onClose }) => {
   const [name, setName] = useState(currentName);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,9 +34,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm("确定要清空所有任务和习惯吗？此操作无法撤销，页面将重新加载。")) {
-      onResetData();
+      await onResetData();
     }
   };
 
@@ -39,15 +48,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
   };
 
   const handleExport = () => {
-    const data = {
-      categories: localStorage.getItem('planflow_categories'),
-      tasks: localStorage.getItem('planflow_tasks'),
-      habits: localStorage.getItem('planflow_habits'),
-      username: localStorage.getItem('planflow_username'),
-      version: '1.0'
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([encodeSnapshot(snapshot)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -68,24 +69,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const content = e.target?.result as string;
-        const data = JSON.parse(content);
-        
-        // Basic validation
-        if (!data.tasks && !data.habits && !data.categories) {
-            throw new Error("Invalid backup file format");
-        }
+        const restored = decodeBackup(content);
 
         if (window.confirm("这将覆盖当前的所有数据，确定要恢复备份吗？")) {
-            if (data.categories) localStorage.setItem('planflow_categories', data.categories);
-            if (data.tasks) localStorage.setItem('planflow_tasks', data.tasks);
-            if (data.habits) localStorage.setItem('planflow_habits', data.habits);
-            if (data.username) localStorage.setItem('planflow_username', data.username);
-            
-            alert("恢复成功！页面即将刷新。");
-            window.location.reload();
+            await onImportSnapshot(restored);
+            alert("恢复成功！");
+            onClose();
         }
       } catch (err) {
         alert("无法解析备份文件，请确保文件格式正确。");
@@ -123,6 +115,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, onSav
           </button>
         </div>
       </section>
+
+      <WechatLogin login={wechatLogin} />
+      <SyncSettings sync={sync} />
 
       {/* Data Section */}
       <section>

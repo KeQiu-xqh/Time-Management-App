@@ -8,6 +8,42 @@
 - Web端：[MyPlan](https://time-management-app-ashen.vercel.app/)
 ---
 
+## 本地数据与同步基础
+
+- PlanFlow 使用浏览器 IndexedDB 保存运行数据，并会在首次升级时自动迁移原有 `localStorage` 数据。
+- 当前版本仍镜像一份旧格式数据，便于升级期间回退；重置操作只删除 PlanFlow 自己的数据，不会清空同域名下的其他网站数据。
+- 设置页导出的新版备份是版本化 JSON，同时兼容导入旧版备份文件。
+- 多设备同步所需的记录合并和 AES-256-GCM 端侧加密能力已建立，但只有连接 OneDrive 或 WebDAV 后才会启用云端同步。
+- 后续设置的同步口令不会上传到服务器；如果忘记口令，网盘中的加密数据将无法恢复，因此必须另行保存口令和本地备份。
+
+### OneDrive 配置
+
+1. 在 Microsoft Entra 管理中心注册单页应用（SPA）。
+2. 添加生产重定向地址 `https://time-management-app-ashen.vercel.app/`。
+3. 添加 Microsoft Graph 委托权限 `Files.ReadWrite.AppFolder`。
+4. 在 Vercel 项目环境变量中设置 `VITE_ONEDRIVE_CLIENT_ID` 和 `VITE_ONEDRIVE_REDIRECT_URI`，然后重新部署。
+
+应用仅访问 OneDrive 的 `Apps/<应用名>` 专属目录。访问令牌只保留在当前浏览器会话中，到期后需要重新授权；日程文件在上传前已使用同步口令加密。
+
+### 微信公众号登录配置
+
+1. 准备能够配置服务器回调并接收文本消息的微信公众号，在 Vercel 设置 `VITE_WECHAT_QR_URL` 为公众号二维码图片地址。
+2. 在公众号后台把服务器地址设置为 `https://time-management-app-ashen.vercel.app/api/wechat/webhook`，Token 与 Vercel 的 `WECHAT_TOKEN` 保持一致。
+3. 第一版使用明文消息模式；验证码有效期为 5 分钟，使用一次后立即失效。
+4. 创建 Upstash Redis 免费实例，在 Vercel 配置 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`。
+5. 为 `APP_USER_HMAC_SECRET`、`LOGIN_CODE_HMAC_SECRET` 和 `SESSION_COOKIE_SECRET` 分别生成高熵随机值。所有值只放在 Vercel 环境变量，不写入仓库。
+
+Redis 只保存短时验证码哈希、登录状态和伪匿名用户 ID，不保存日程、openid 明文或网盘凭据。第一版不接入短信服务；免费额度耗尽时登录失败关闭，不自动升级付费。
+
+### WebDAV 配置
+
+- 在设置中填写完整的 HTTPS 文件地址、用户名和应用专用密码；密码与同步口令只保留在当前页面内存中。
+- 默认由浏览器直接连接 WebDAV。若服务商不允许跨域，可在 Vercel 设置 `WEBDAV_PROXY_ENABLED=true` 并勾选“使用安全转发”。
+- 安全转发只允许 HTTPS 443、公网地址和 GET/PUT，拒绝重定向，并把单次同步文件限制为 2 MiB；关闭该环境变量时不会消耗转发流量。
+- 网盘空间由用户自己的账户提供，项目服务不保存日程明文。
+
+---
+
 ## ✨ 核心亮点 (Core Features)
 
 ### 1. 🎯 独特的双日期逻辑 (Do Date vs. Deadline)

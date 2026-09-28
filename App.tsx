@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Tab, Task, Category, Habit, RepeatFrequency } from './types';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
@@ -15,14 +15,10 @@ import { useVisibleViewport } from './components/useVisibleViewport';
 import './components/MobileUI.css';
 import { nextRepeatTask, rescheduleTask } from './components/recurrence';
 import { dateKey } from './components/calendarGesture';
-
-// --- Utility: Date Reviver for JSON.parse ---
-const dateReviver = (key: string, value: any) => {
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
-    return new Date(value);
-  }
-  return value;
-};
+import { emptySnapshot, type PlanSnapshot } from './data/planSnapshot';
+import { usePlanPersistence } from './data/usePlanPersistence';
+import { useCloudSync } from './sync/useCloudSync';
+import { useWechatLogin } from './auth/useWechatLogin';
 
 const DEFAULT_CATEGORIES: Record<string, Category> = {};
 
@@ -44,60 +40,33 @@ const App: React.FC = () => {
 
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [userName, setUserName] = useState<string>(() => {
-      return localStorage.getItem('planflow_username') || 'Guest User';
-  });
+  const [userName, setUserName] = useState<string>(() => emptySnapshot().username);
 
   // Data State
-  const [categories, setCategories] = useState<Record<string, Category>>(() => {
-    try {
-      const saved = localStorage.getItem('planflow_categories');
-      return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
-    } catch (e) {
-      console.error("Failed to load categories", e);
-      return DEFAULT_CATEGORIES;
-    }
+  const [categories, setCategories] = useState<Record<string, Category>>(DEFAULT_CATEGORIES);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const snapshot = useMemo<PlanSnapshot>(() => ({
+    version: 1,
+    categories,
+    tasks,
+    habits,
+    username: userName
+  }), [categories, tasks, habits, userName]);
+  const persistence = usePlanPersistence(snapshot, {
+    setCategories,
+    setTasks,
+    setHabits,
+    setUserName
   });
-
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    try {
-      const saved = localStorage.getItem('planflow_tasks');
-      return saved ? JSON.parse(saved, dateReviver) : [];
-    } catch (e) {
-      console.error("Failed to load tasks", e);
-      return [];
-    }
-  });
-
-  const [habits, setHabits] = useState<Habit[]>(() => {
-    try {
-      const saved = localStorage.getItem('planflow_habits');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error("Failed to load habits", e);
-      return [];
-    }
-  });
-
-  // --- 2. Persistence Effects ---
-  useEffect(() => {
-    localStorage.setItem('planflow_categories', JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem('planflow_tasks', JSON.stringify(tasks));
-  }, [tasks]);
-
-  useEffect(() => {
-    localStorage.setItem('planflow_habits', JSON.stringify(habits));
-  }, [habits]);
-
-  useEffect(() => {
-    localStorage.setItem('planflow_username', userName);
-  }, [userName]);
+  const cloudSync = useCloudSync(snapshot, persistence.importSnapshot);
+  const wechatLogin = useWechatLogin();
+  const didRunDailyReview = useRef(false);
 
   // --- 3. Daily Review Logic ---
   useEffect(() => {
+    if (!persistence.ready || didRunDailyReview.current) return;
+    didRunDailyReview.current = true;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -112,14 +81,11 @@ const App: React.FC = () => {
       setReviewTasks(expiredTasks);
       setIsReviewModalOpen(true);
     }
-  }, []);
+  }, [persistence.ready, tasks]);
 
   // --- 4. Action Handlers ---
 
-  const handleResetData = () => {
-      localStorage.clear();
-      window.location.reload();
-  };
+  const handleResetData = () => persistence.resetData();
 
   // Unified Opener
   const handleOpenCreator = (type: UnifiedItemType = 'task', categoryId?: string) => {
@@ -455,6 +421,16 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-[100dvh] bg-app-bg text-app-text font-sans selection:bg-indigo-100 overflow-hidden">
+      {!persistence.ready && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-white/90 text-sm font-bold text-gray-500">
+          正在加载本地计划…
+        </div>
+      )}
+      {persistence.error && (
+        <div className="fixed left-1/2 top-3 z-[90] max-w-[calc(100%-24px)] -translate-x-1/2 rounded-xl bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800 shadow-lg ring-1 ring-amber-200">
+          本地数据库暂时不可用，已载入兼容备份：{persistence.error}
+        </div>
+      )}
       <Sidebar 
         currentTab={activeTab} 
         onSwitch={setActiveTab} 
@@ -517,7 +493,11 @@ const App: React.FC = () => {
       >
         <SettingsModal 
             currentName={userName}
+            snapshot={snapshot}
+            sync={cloudSync}
+            wechatLogin={wechatLogin}
             onSaveName={setUserName}
+            onImportSnapshot={persistence.importSnapshot}
             onResetData={handleResetData}
             onClearCompleted={handleClearCompletedTasks}
             onClose={() => setIsSettingsOpen(false)}
