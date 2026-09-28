@@ -4,15 +4,21 @@ import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('phone list pages use compact spacing without shrinking primary actions below 40px', async () => {
+test('phone backlog and category pages use the approved ultra-compact density', async () => {
   const css = await read('../components/MobileUI.css');
   const mobile = css.slice(css.indexOf('@media (max-width: 767.98px)'));
 
-  assert.match(mobile, /\.mobile-page-header\s*\{[^}]*padding:\s*12px 10px 8px;/s);
-  assert.match(mobile, /\.mobile-page-content\s*\{[^}]*padding:\s*10px 10px 0;[^}]*gap:\s*14px;/s);
-  assert.match(mobile, /\.task-card\s*\{[^}]*padding:\s*8px;[^}]*gap:\s*6px;/s);
-  assert.match(mobile, /\.task-toggle\s*\{[^}]*width:\s*40px;[^}]*height:\s*40px;/s);
-  assert.match(mobile, /\.task-list-grid\s*\{[^}]*gap:\s*8px;/s);
+  assert.match(mobile, /\.mobile-page-header\s*\{[^}]*padding:\s*8px 10px 6px;/s);
+  assert.match(mobile, /\.categories-page \.mobile-page-title\s*\{[^}]*margin-bottom:\s*6px;/s);
+  assert.match(mobile, /:is\(\.categories-page, \.backlog-page\) \.mobile-page-title p\s*\{[^}]*display:\s*none;/s);
+  assert.match(mobile, /\.mobile-page-content\s*\{[^}]*padding:\s*8px 10px 0;[^}]*gap:\s*10px;/s);
+  assert.match(mobile, /\.task-card\s*\{[^}]*padding:\s*6px 7px;[^}]*gap:\s*5px;/s);
+  assert.match(mobile, /\.task-toggle\s*\{[^}]*width:\s*32px;[^}]*height:\s*32px;/s);
+  assert.match(mobile, /\.task-list-grid\s*\{[^}]*gap:\s*5px;/s);
+  assert.match(mobile, /\.task-metadata\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*gap:\s*2px 4px;/s);
+  assert.match(mobile, /\.task-card-title\s*\{[^}]*font-size:\s*13px;[^}]*line-height:\s*16px;/s);
+  assert.match(mobile, /\.category-tabs > button\s*\{[^}]*min-height:\s*34px;/s);
+  assert.match(mobile, /\.category-tabs > button:last-child\s*\{[^}]*min-width:\s*36px;/s);
   assert.match(mobile, /\.category-habit-card\s*\{[^}]*padding:\s*10px;/s);
   assert.match(mobile, /\.habit-card\s*\{[^}]*padding:\s*10px;/s);
   assert.match(mobile, /\.habit-week button\s*\{[^}]*max-width:\s*38px;[^}]*height:\s*38px;/s);
