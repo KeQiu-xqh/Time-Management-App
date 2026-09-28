@@ -4,11 +4,14 @@ import { User, Database, Info, Trash2, Save, Download, Upload } from 'lucide-rea
 import { decodeBackup, encodeSnapshot, type PlanSnapshot } from '../data/planSnapshot';
 import { SyncSettings } from './SyncSettings';
 import type { CloudSyncController } from '../sync/useCloudSync';
+import { WechatLogin } from './WechatLogin';
+import type { WechatLoginController } from '../auth/useWechatLogin';
 
 interface SettingsModalProps {
   currentName: string;
   snapshot: PlanSnapshot;
   sync: CloudSyncController;
+  wechatLogin: WechatLoginController;
   onSaveName: (name: string) => void;
   onImportSnapshot: (snapshot: PlanSnapshot) => Promise<void>;
   onResetData: () => Promise<void>;
@@ -16,7 +19,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snapshot, sync, onSaveName, onImportSnapshot, onResetData, onClearCompleted, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snapshot, sync, wechatLogin, onSaveName, onImportSnapshot, onResetData, onClearCompleted, onClose }) => {
   const [name, setName] = useState(currentName);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,6 +116,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snaps
         </div>
       </section>
 
+      <WechatLogin login={wechatLogin} />
       <SyncSettings sync={sync} />
 
       {/* Data Section */}

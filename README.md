@@ -25,6 +25,16 @@
 
 应用仅访问 OneDrive 的 `Apps/<应用名>` 专属目录。访问令牌只保留在当前浏览器会话中，到期后需要重新授权；日程文件在上传前已使用同步口令加密。
 
+### 微信公众号登录配置
+
+1. 准备能够配置服务器回调并接收文本消息的微信公众号，在 Vercel 设置 `VITE_WECHAT_QR_URL` 为公众号二维码图片地址。
+2. 在公众号后台把服务器地址设置为 `https://time-management-app-ashen.vercel.app/api/wechat/webhook`，Token 与 Vercel 的 `WECHAT_TOKEN` 保持一致。
+3. 第一版使用明文消息模式；验证码有效期为 5 分钟，使用一次后立即失效。
+4. 创建 Upstash Redis 免费实例，在 Vercel 配置 `UPSTASH_REDIS_REST_URL` 和 `UPSTASH_REDIS_REST_TOKEN`。
+5. 为 `APP_USER_HMAC_SECRET`、`LOGIN_CODE_HMAC_SECRET` 和 `SESSION_COOKIE_SECRET` 分别生成高熵随机值。所有值只放在 Vercel 环境变量，不写入仓库。
+
+Redis 只保存短时验证码哈希、登录状态和伪匿名用户 ID，不保存日程、openid 明文或网盘凭据。第一版不接入短信服务；免费额度耗尽时登录失败关闭，不自动升级付费。
+
 ### WebDAV 配置
 
 - 在设置中填写完整的 HTTPS 文件地址、用户名和应用专用密码；密码与同步口令只保留在当前页面内存中。

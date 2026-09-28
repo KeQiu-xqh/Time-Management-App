@@ -18,6 +18,7 @@ import { dateKey } from './components/calendarGesture';
 import { emptySnapshot, type PlanSnapshot } from './data/planSnapshot';
 import { usePlanPersistence } from './data/usePlanPersistence';
 import { useCloudSync } from './sync/useCloudSync';
+import { useWechatLogin } from './auth/useWechatLogin';
 
 const DEFAULT_CATEGORIES: Record<string, Category> = {};
 
@@ -59,6 +60,7 @@ const App: React.FC = () => {
     setUserName
   });
   const cloudSync = useCloudSync(snapshot, persistence.importSnapshot);
+  const wechatLogin = useWechatLogin();
   const didRunDailyReview = useRef(false);
 
   // --- 3. Daily Review Logic ---
@@ -493,6 +495,7 @@ const App: React.FC = () => {
             currentName={userName}
             snapshot={snapshot}
             sync={cloudSync}
+            wechatLogin={wechatLogin}
             onSaveName={setUserName}
             onImportSnapshot={persistence.importSnapshot}
             onResetData={handleResetData}
