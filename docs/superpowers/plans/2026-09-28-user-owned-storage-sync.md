@@ -276,4 +276,3 @@ Expected: no whitespace errors.
 git add sync/useCloudSync.ts components/SyncSettings.tsx components/SettingsModal.tsx App.tsx README.md
 git commit -m "feat: add user-owned storage sync settings"
 ```
-
