@@ -1,9 +1,11 @@
 import { decodeSnapshot, emptySnapshot, readLegacySnapshot, type PlanSnapshot } from './planSnapshot';
+import type { SyncPayload, SyncRecord } from '../sync/records';
 
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'app';
 const SNAPSHOT_KEY = 'snapshot';
 const MIGRATION_KEY = 'migration-v1';
+const SYNC_PAYLOAD_KEY = 'sync-payload';
 const LEGACY_KEYS = [
   'planflow_categories',
   'planflow_tasks',
@@ -29,6 +31,27 @@ const transactionDone = (transaction: IDBTransaction): Promise<void> => new Prom
   transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB 事务失败'));
   transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB 事务已中止'));
 });
+
+const validRecord = (value: unknown): value is SyncRecord => {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Partial<SyncRecord>;
+  return typeof record.key === 'string'
+    && /^(category|task|habit|profile):.+$/.test(record.key)
+    && typeof record.updatedAt === 'string'
+    && Number.isInteger(record.logicalClock)
+    && typeof record.deviceId === 'string'
+    && ('value' in record);
+};
+
+const validPayload = (value: unknown): value is SyncPayload => {
+  if (!value || typeof value !== 'object') return false;
+  const payload = value as Partial<SyncPayload>;
+  return payload.schemaVersion === 1
+    && Number.isInteger(payload.clock)
+    && (payload.clock ?? -1) >= 0
+    && Array.isArray(payload.records)
+    && payload.records.every(validRecord);
+};
 
 export class PlanRepository {
   private readonly factory: IDBFactory;
@@ -83,6 +106,32 @@ export class PlanRepository {
     try {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
       transaction.objectStore(STORE_NAME).put(validated, SNAPSHOT_KEY);
+      await transactionDone(transaction);
+    } finally {
+      database.close();
+    }
+  }
+
+  async loadSyncPayload(): Promise<SyncPayload | null> {
+    const database = await this.open();
+    try {
+      const transaction = database.transaction(STORE_NAME, 'readonly');
+      const stored = await requestResult(transaction.objectStore(STORE_NAME).get(SYNC_PAYLOAD_KEY));
+      await transactionDone(transaction);
+      if (stored === undefined) return null;
+      if (!validPayload(stored)) throw new Error('本地同步元数据格式无效');
+      return stored;
+    } finally {
+      database.close();
+    }
+  }
+
+  async saveSyncPayload(payload: SyncPayload): Promise<void> {
+    if (!validPayload(payload)) throw new Error('同步元数据格式无效');
+    const database = await this.open();
+    try {
+      const transaction = database.transaction(STORE_NAME, 'readwrite');
+      transaction.objectStore(STORE_NAME).put(payload, SYNC_PAYLOAD_KEY);
       await transactionDone(transaction);
     } finally {
       database.close();

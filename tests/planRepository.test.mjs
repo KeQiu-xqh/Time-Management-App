@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { IDBFactory } from 'fake-indexeddb';
 import { PlanRepository } from '../data/planRepository.ts';
 import { emptySnapshot } from '../data/planSnapshot.ts';
+import { emptyPayload } from '../sync/projection.ts';
 
 const memoryStorage = (initial = {}) => {
   const values = new Map(Object.entries(initial));
@@ -74,4 +75,28 @@ test('clear removes only PlanFlow legacy keys', async () => {
   assert.equal(storage.getItem('planflow_habits'), null);
   assert.equal(storage.getItem('planflow_username'), null);
   assert.equal(storage.getItem('unrelated'), 'keep');
+});
+
+test('repository persists sync payload and clear removes it', async () => {
+  const indexedDB = new IDBFactory();
+  const repository = new PlanRepository({
+    indexedDB,
+    storage: memoryStorage(),
+    databaseName: 'sync-payload-test'
+  });
+  const payload = emptyPayload();
+  payload.clock = 1;
+  payload.records.push({
+    key: 'profile:default',
+    value: { username: 'Qiu' },
+    updatedAt: '2026-09-28T12:00:00.000Z',
+    logicalClock: 1,
+    deviceId: 'phone'
+  });
+
+  assert.equal(await repository.loadSyncPayload(), null);
+  await repository.saveSyncPayload(payload);
+  assert.deepEqual(await repository.loadSyncPayload(), payload);
+  await repository.clear();
+  assert.equal(await repository.loadSyncPayload(), null);
 });
