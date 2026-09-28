@@ -17,6 +17,7 @@ import { nextRepeatTask, rescheduleTask } from './components/recurrence';
 import { dateKey } from './components/calendarGesture';
 import { emptySnapshot, type PlanSnapshot } from './data/planSnapshot';
 import { usePlanPersistence } from './data/usePlanPersistence';
+import { useCloudSync } from './sync/useCloudSync';
 
 const DEFAULT_CATEGORIES: Record<string, Category> = {};
 
@@ -57,6 +58,7 @@ const App: React.FC = () => {
     setHabits,
     setUserName
   });
+  const cloudSync = useCloudSync(snapshot, persistence.importSnapshot);
   const didRunDailyReview = useRef(false);
 
   // --- 3. Daily Review Logic ---
@@ -490,6 +492,7 @@ const App: React.FC = () => {
         <SettingsModal 
             currentName={userName}
             snapshot={snapshot}
+            sync={cloudSync}
             onSaveName={setUserName}
             onImportSnapshot={persistence.importSnapshot}
             onResetData={handleResetData}

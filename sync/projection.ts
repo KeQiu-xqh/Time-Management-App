@@ -20,8 +20,8 @@ const canonicalize = (value: unknown): unknown => {
 const equalValues = (left: unknown, right: unknown) =>
   JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right));
 
-const desiredRecords = (snapshot: PlanSnapshot): Map<string, unknown> => {
-  const desired = new Map<string, unknown>();
+const desiredRecords = (snapshot: PlanSnapshot): Map<SyncRecord['key'], unknown> => {
+  const desired = new Map<SyncRecord['key'], unknown>();
   for (const category of Object.values(snapshot.categories)) desired.set(`category:${category.id}`, serializable(category));
   for (const habit of snapshot.habits) desired.set(`habit:${habit.id}`, serializable(habit));
   for (const task of snapshot.tasks) desired.set(`task:${task.id}`, serializable(task));

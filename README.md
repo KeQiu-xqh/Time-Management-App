@@ -16,6 +16,22 @@
 - 多设备同步所需的记录合并和 AES-256-GCM 端侧加密能力已建立，但只有连接 OneDrive 或 WebDAV 后才会启用云端同步。
 - 后续设置的同步口令不会上传到服务器；如果忘记口令，网盘中的加密数据将无法恢复，因此必须另行保存口令和本地备份。
 
+### OneDrive 配置
+
+1. 在 Microsoft Entra 管理中心注册单页应用（SPA）。
+2. 添加生产重定向地址 `https://time-management-app-ashen.vercel.app/`。
+3. 添加 Microsoft Graph 委托权限 `Files.ReadWrite.AppFolder`。
+4. 在 Vercel 项目环境变量中设置 `VITE_ONEDRIVE_CLIENT_ID` 和 `VITE_ONEDRIVE_REDIRECT_URI`，然后重新部署。
+
+应用仅访问 OneDrive 的 `Apps/<应用名>` 专属目录。访问令牌只保留在当前浏览器会话中，到期后需要重新授权；日程文件在上传前已使用同步口令加密。
+
+### WebDAV 配置
+
+- 在设置中填写完整的 HTTPS 文件地址、用户名和应用专用密码；密码与同步口令只保留在当前页面内存中。
+- 默认由浏览器直接连接 WebDAV。若服务商不允许跨域，可在 Vercel 设置 `WEBDAV_PROXY_ENABLED=true` 并勾选“使用安全转发”。
+- 安全转发只允许 HTTPS 443、公网地址和 GET/PUT，拒绝重定向，并把单次同步文件限制为 2 MiB；关闭该环境变量时不会消耗转发流量。
+- 网盘空间由用户自己的账户提供，项目服务不保存日程明文。
+
 ---
 
 ## ✨ 核心亮点 (Core Features)

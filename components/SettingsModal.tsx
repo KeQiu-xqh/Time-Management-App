@@ -2,10 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Database, Info, Trash2, Save, Download, Upload } from 'lucide-react';
 import { decodeBackup, encodeSnapshot, type PlanSnapshot } from '../data/planSnapshot';
+import { SyncSettings } from './SyncSettings';
+import type { CloudSyncController } from '../sync/useCloudSync';
 
 interface SettingsModalProps {
   currentName: string;
   snapshot: PlanSnapshot;
+  sync: CloudSyncController;
   onSaveName: (name: string) => void;
   onImportSnapshot: (snapshot: PlanSnapshot) => Promise<void>;
   onResetData: () => Promise<void>;
@@ -13,7 +16,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snapshot, onSaveName, onImportSnapshot, onResetData, onClearCompleted, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snapshot, sync, onSaveName, onImportSnapshot, onResetData, onClearCompleted, onClose }) => {
   const [name, setName] = useState(currentName);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,6 +112,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snaps
           </button>
         </div>
       </section>
+
+      <SyncSettings sync={sync} />
 
       {/* Data Section */}
       <section>
