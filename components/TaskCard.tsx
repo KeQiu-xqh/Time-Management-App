@@ -62,7 +62,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     return (
       <div 
         onClick={() => onClick && onClick(task)}
-        className={`bg-white rounded-xl p-3 shadow-sm border border-transparent hover:border-indigo-50 group relative cursor-pointer mb-2 transition-all ${task.isCompleted ? 'opacity-50 grayscale' : 'hover:shadow-md'}`}
+        className={`week-list-card relative mb-2 min-w-0 cursor-pointer rounded-xl border border-transparent bg-white p-2 shadow-sm transition-all hover:border-indigo-50 xl:p-3 ${task.isCompleted ? 'opacity-50 grayscale' : 'hover:shadow-md'}`}
       >
          <div className="flex items-start gap-2">
             <button 

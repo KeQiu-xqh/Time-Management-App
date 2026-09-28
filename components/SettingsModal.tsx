@@ -6,6 +6,7 @@ import { SyncSettings } from './SyncSettings';
 import type { CloudSyncController } from '../sync/useCloudSync';
 import { WechatLogin } from './WechatLogin';
 import type { WechatLoginController } from '../auth/useWechatLogin';
+import { SettingsHelp } from './SettingsHelp';
 
 interface SettingsModalProps {
   currentName: string;
@@ -91,6 +92,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ currentName, snaps
 
   return (
     <div className="settings-content space-y-8">
+      <SettingsHelp />
+
       {/* Profile Section */}
       <section>
         <h3 className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">

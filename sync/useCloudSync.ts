@@ -77,7 +77,7 @@ export function useCloudSync(
 
   const connectOneDrive = useCallback(async () => {
     if (!clientId()) {
-      setError('尚未配置 VITE_ONEDRIVE_CLIENT_ID');
+      setError('站点尚未开通 OneDrive 同步');
       setStatus('error');
       return;
     }

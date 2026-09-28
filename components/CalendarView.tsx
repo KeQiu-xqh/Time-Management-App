@@ -1054,14 +1054,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               {viewMode === 'week' && (
                   <>
                     {displayMode === 'list' ? (
-                        <div className="h-full overflow-x-auto pb-4 px-8 pt-4">
-                            <div className="grid grid-cols-7 gap-3 min-w-[800px] h-full">
+                        <div className="week-list-scroll h-full overflow-hidden pb-4 px-3 pt-4 xl:px-6">
+                            <div className="week-list-grid grid h-full min-w-0 grid-cols-7 gap-1.5 xl:gap-3">
                                 {weekDays.map((day, i) => {
                                     const dayTasks = tasks.filter(t => t.doDate && isSameDay(new Date(t.doDate), day.date));
                                     dayTasks.sort((a,b) => (a.isCompleted === b.isCompleted ? 0 : a.isCompleted ? 1 : -1));
 
                                     return (
-                                        <div key={i} className={`flex flex-col h-full rounded-2xl p-2 transition-colors ${day.isToday ? 'bg-indigo-50/50 ring-1 ring-indigo-100' : 'bg-gray-50/30'}`}>
+                                        <div key={i} className={`flex h-full min-w-0 flex-col rounded-2xl p-1 transition-colors xl:p-2 ${day.isToday ? 'bg-indigo-50/50 ring-1 ring-indigo-100' : 'bg-gray-50/30'}`}>
                                             <div className="text-center mb-3 py-1">
                                                 <div className={`text-[10px] font-bold uppercase mb-1 ${day.isToday ? 'text-app-primary' : 'text-gray-400'}`}>{day.dayName}</div>
                                                 <div className={`w-8 h-8 mx-auto flex items-center justify-center rounded-full text-sm font-bold ${
@@ -1111,7 +1111,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
        {/* --- RIGHT SIDEBAR: BACKLOG POOL --- */}
        <div 
-         className={`w-80 h-full flex flex-col border-l bg-white hidden lg:flex transition-colors duration-300 ${isDragOverBacklog ? 'bg-red-50' : ''}`}
+         className={`hidden h-full w-64 flex-col border-l bg-white transition-colors duration-300 lg:flex xl:w-80 ${isDragOverBacklog ? 'bg-red-50' : ''}`}
          onDragOver={handleBacklogDragOver}
          onDragLeave={handleBacklogDragLeave}
          onDrop={handleBacklogDrop}

@@ -23,10 +23,15 @@ export const WechatLogin: React.FC<{ login: WechatLoginController }> = ({ login 
           </div>
         ) : login.status === 'waiting' ? (
           <div className="text-center">
-            {qrUrl ? <img src={qrUrl} alt="微信公众号二维码" className="mx-auto mb-3 h-36 w-36 rounded-xl bg-white object-contain p-2 shadow-sm" /> : <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">尚未配置公众号二维码 VITE_WECHAT_QR_URL</p>}
+            {qrUrl ? <img src={qrUrl} alt="微信公众号二维码" className="mx-auto mb-3 h-36 w-36 rounded-xl bg-white object-contain p-2 shadow-sm" /> : <p className="mb-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">公众号二维码尚未提供，请联系站点管理员。</p>}
             <p className="text-xs text-gray-500">关注公众号后发送验证码</p>
             <p className="my-2 font-mono text-3xl font-black tracking-[0.25em] text-emerald-700">{login.code}</p>
             <p className="text-xs text-gray-400">{seconds} 秒后失效</p>
+          </div>
+        ) : login.status === 'unavailable' ? (
+          <div className="space-y-3">
+            <button disabled className="flex min-h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-emerald-200 px-4 text-sm font-bold text-white"><LogIn size={17} />微信扫码登录</button>
+            <p className="rounded-lg bg-amber-50 p-2 text-xs leading-5 text-amber-700">站点尚未开通微信登录。当前数据仍安全保存在本机，开通条件见页面顶部的使用说明。</p>
           </div>
         ) : (
           <button onClick={() => void login.start()} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#07C160] px-4 text-sm font-bold text-white"><LogIn size={17} />微信扫码登录</button>

@@ -1,8 +1,8 @@
-/* Only the newly expanded custom-repeat form needs a desktop overflow guard. */
+/* Keep every desktop dialog inside the viewport while its content scrolls. */
 @media (min-width: 768px) {
-  .app-modal-shell:has(.repeat-custom) { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
-  .app-modal-shell:has(.repeat-custom) .app-modal-header { flex-shrink: 0; }
-  .app-modal-shell:has(.repeat-custom) .app-modal-body { min-height: 0; overflow-y: auto; }
+  .app-modal-shell { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+  .app-modal-header { flex-shrink: 0; }
+  .app-modal-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .app-modal-shell:has(.repeat-custom) .task-editor { height: auto; }
 }
 /* Existing page layouts are adjusted only below the desktop breakpoint. */

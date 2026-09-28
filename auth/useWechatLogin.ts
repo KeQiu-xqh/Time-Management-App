@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type WechatLoginStatus = 'unknown' | 'signed_out' | 'waiting' | 'signed_in' | 'error';
+export type WechatLoginStatus = 'unknown' | 'signed_out' | 'waiting' | 'signed_in' | 'unavailable' | 'error';
 
 interface PendingSession { sessionId: string; pollSecret: string; code: string; expiresAt: number }
 
@@ -12,9 +12,13 @@ export function useWechatLogin() {
 
   useEffect(() => {
     fetch('/api/auth/wechat/me', { credentials: 'include' })
-      .then(async response => response.ok ? response.json() : { signedIn: false })
+      .then(async response => {
+        if (response.status === 503) return { signedIn: false, unavailable: true };
+        return response.ok ? response.json() : { signedIn: false };
+      })
       .then(result => {
         if (result.signedIn) { setUserId(result.userId); setStatus('signed_in'); }
+        else if (result.unavailable) setStatus('unavailable');
         else setStatus('signed_out');
       })
       .catch(() => setStatus('signed_out'));
@@ -25,6 +29,10 @@ export function useWechatLogin() {
     try {
       const response = await fetch('/api/auth/wechat/session', { method: 'POST', credentials: 'include' });
       const result = await response.json();
+      if (response.status === 503) {
+        setStatus('unavailable');
+        return;
+      }
       if (!response.ok) throw new Error(result.error || '无法创建微信登录验证码');
       setPending(result);
       setStatus('waiting');

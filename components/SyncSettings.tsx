@@ -20,7 +20,7 @@ export const SyncSettings: React.FC<{ sync: CloudSyncController }> = ({ sync }) 
 
       {sync.providerType === 'onedrive' && (
         <div className="space-y-2">
-          {!sync.oneDriveConfigured && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-700">部署环境尚未配置 VITE_ONEDRIVE_CLIENT_ID。</p>}
+          {!sync.oneDriveConfigured && <p className="rounded-lg bg-amber-50 p-2 text-xs leading-5 text-amber-700">站点尚未开通 OneDrive 同步。你仍可使用本地备份；开通方法见页面顶部的使用说明。</p>}
           <button onClick={() => void sync.connectOneDrive()} disabled={!sync.oneDriveConfigured} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
             <LogIn size={16} />{sync.oneDriveConnected ? '重新授权 OneDrive' : '连接 OneDrive'}
           </button>
