@@ -8,6 +8,16 @@
 - Web端：[MyPlan](https://time-management-app-ashen.vercel.app/)
 ---
 
+## 本地数据与同步基础
+
+- PlanFlow 使用浏览器 IndexedDB 保存运行数据，并会在首次升级时自动迁移原有 `localStorage` 数据。
+- 当前版本仍镜像一份旧格式数据，便于升级期间回退；重置操作只删除 PlanFlow 自己的数据，不会清空同域名下的其他网站数据。
+- 设置页导出的新版备份是版本化 JSON，同时兼容导入旧版备份文件。
+- 多设备同步所需的记录合并和 AES-256-GCM 端侧加密能力已建立，但只有连接 OneDrive 或 WebDAV 后才会启用云端同步。
+- 后续设置的同步口令不会上传到服务器；如果忘记口令，网盘中的加密数据将无法恢复，因此必须另行保存口令和本地备份。
+
+---
+
 ## ✨ 核心亮点 (Core Features)
 
 ### 1. 🎯 独特的双日期逻辑 (Do Date vs. Deadline)

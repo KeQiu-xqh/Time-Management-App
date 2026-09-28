@@ -1,6 +1,6 @@
 # Local Encrypted Sync Core Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Move PlanFlow from direct `localStorage` persistence to a tested IndexedDB repository and add the deterministic record merge and client-side encrypted bundle primitives required by later OneDrive/WebDAV synchronization.
 
@@ -29,7 +29,7 @@
 - Create: `data/planSnapshot.ts`
 - Test: `tests/planSnapshot.test.mjs`
 
-- [ ] **Step 1: Write the failing snapshot test**
+- [x] **Step 1: Write the failing snapshot test**
 
 The test must transpile `data/planSnapshot.ts`, construct a storage-like map with all four existing keys, and assert that `readLegacySnapshot()` returns version `1`, preserves the profile and collections, hydrates task dates to `Date`, and returns an empty snapshot for malformed JSON without mutating the input map.
 
@@ -50,13 +50,13 @@ test('legacy snapshot hydrates dates and preserves all collections', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run: `node --test tests/planSnapshot.test.mjs`
 
 Expected: FAIL because `data/planSnapshot.ts` does not exist.
 
-- [ ] **Step 3: Implement the snapshot boundary**
+- [x] **Step 3: Implement the snapshot boundary**
 
 Define and export these exact APIs:
 
@@ -83,13 +83,13 @@ export function decodeSnapshot(value: string): PlanSnapshot;
 
 `decodeSnapshot()` must validate top-level collection shapes and hydrate only `doDate` and `deadline` into valid `Date` objects. `readLegacySnapshot()` must isolate parsing errors per collection so one bad key does not destroy the other valid collections.
 
-- [ ] **Step 4: Run the snapshot tests and verify GREEN**
+- [x] **Step 4: Run the snapshot tests and verify GREEN**
 
 Run: `node --test tests/planSnapshot.test.mjs`
 
 Expected: all snapshot tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add data/planSnapshot.ts tests/planSnapshot.test.mjs
@@ -104,13 +104,13 @@ git commit -m "feat: add versioned plan snapshot migration"
 - Create: `data/planRepository.ts`
 - Test: `tests/planRepository.test.mjs`
 
-- [ ] **Step 1: Install the test-only IndexedDB implementation**
+- [x] **Step 1: Install the test-only IndexedDB implementation**
 
 Run: `npm install --save-dev fake-indexeddb tsx`
 
 Expected: `fake-indexeddb` and `tsx` appear under `devDependencies` and npm completes without install errors. Change the test script to `node --import tsx --test tests/*.test.mjs` so new tests can import `.ts` modules directly while existing tests remain valid.
 
-- [ ] **Step 2: Write the failing repository tests**
+- [x] **Step 2: Write the failing repository tests**
 
 Cover these behaviors with a fresh fake IndexedDB factory per test:
 
@@ -132,13 +132,13 @@ test('repository round-trips a snapshot and clears its database', async () => {
 });
 ```
 
-- [ ] **Step 3: Run repository tests and verify RED**
+- [x] **Step 3: Run repository tests and verify RED**
 
 Run: `node --test tests/planRepository.test.mjs`
 
 Expected: FAIL because `PlanRepository` is not implemented.
 
-- [ ] **Step 4: Implement `PlanRepository`**
+- [x] **Step 4: Implement `PlanRepository`**
 
 Expose a single class with dependency injection for tests:
 
@@ -159,13 +159,13 @@ export class PlanRepository {
 
 Use database version `1`, object store `app`, record key `snapshot`. On the first empty load, read legacy values, save the resulting snapshot transactionally, and set metadata key `migration-v1`. `save()` must await transaction completion; `clear()` must delete the database and remove only PlanFlow legacy keys, never call `localStorage.clear()`.
 
-- [ ] **Step 5: Run repository and complete test suites**
+- [x] **Step 5: Run repository and complete test suites**
 
 Run: `npm test`
 
 Expected: repository tests and the original 20 tests PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add package.json package-lock.json data/planRepository.ts tests/planRepository.test.mjs
@@ -180,7 +180,7 @@ git commit -m "feat: persist plan data in IndexedDB"
 - Modify: `components/SettingsModal.tsx`
 - Test: `tests/planSnapshot.test.mjs`
 
-- [ ] **Step 1: Add failing tests for backup validation**
+- [x] **Step 1: Add failing tests for backup validation**
 
 Add assertions that `decodeBackup()` accepts both the current backup shape where collection values are JSON strings and the new snapshot shape where they are arrays/objects. It must reject a backup with no recognizable PlanFlow fields.
 
@@ -192,13 +192,13 @@ test('backup decoder accepts old exports and new snapshots', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run: `node --test tests/planSnapshot.test.mjs`
 
 Expected: FAIL because `decodeBackup` is not exported.
 
-- [ ] **Step 3: Implement backup compatibility and the persistence hook**
+- [x] **Step 3: Implement backup compatibility and the persistence hook**
 
 Add:
 
@@ -223,7 +223,7 @@ export function usePlanPersistence(snapshot: PlanSnapshot, setters: PlanStateSet
 
 The hook loads once, applies the repository snapshot, and does not save until bootstrap completes. After bootstrap, debounce writes by 250 ms and mirror the four old localStorage keys for one rollback release. `importSnapshot()` saves before applying state. `resetData()` clears the PlanFlow repository and its four legacy keys, then reloads.
 
-- [ ] **Step 4: Route App and Settings through the repository**
+- [x] **Step 4: Route App and Settings through the repository**
 
 In `App.tsx`, replace lazy localStorage reads and four direct persistence effects with `emptySnapshot()` initial values and `usePlanPersistence()`. Pass the current snapshot to the hook. Display a non-destructive loading state until bootstrap completes and a recovery message with export access on repository failure. Gate the daily-review effect on `ready` so expired tasks are evaluated after repository bootstrap rather than against the initial empty array.
 
@@ -243,7 +243,7 @@ interface SettingsModalProps {
 
 Export `encodeSnapshot(snapshot)` and import with `decodeBackup(content)`. No component may read or write localStorage directly.
 
-- [ ] **Step 5: Run all tests and build**
+- [x] **Step 5: Run all tests and build**
 
 Run: `npm test`
 
@@ -253,7 +253,7 @@ Run: `npm run build`
 
 Expected: Vite production build succeeds with no TypeScript transform errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add App.tsx components/SettingsModal.tsx data/usePlanPersistence.ts data/planSnapshot.ts tests/planSnapshot.test.mjs
@@ -267,7 +267,7 @@ git commit -m "refactor: route app persistence through repository"
 - Create: `sync/merge.ts`
 - Test: `tests/syncMerge.test.mjs`
 
-- [ ] **Step 1: Write failing merge tests**
+- [x] **Step 1: Write failing merge tests**
 
 Cover different-record union, larger logical clock winning, `deviceId` tie-break, a newer tombstone deleting an older live record, an older tombstone losing to a newer edit, and deterministic output ordering.
 
@@ -285,13 +285,13 @@ test('newer tombstone prevents deleted data from reappearing', () => {
 });
 ```
 
-- [ ] **Step 2: Run merge tests and verify RED**
+- [x] **Step 2: Run merge tests and verify RED**
 
 Run: `node --test tests/syncMerge.test.mjs`
 
 Expected: FAIL because the sync modules do not exist.
 
-- [ ] **Step 3: Implement record types and merge**
+- [x] **Step 3: Implement record types and merge**
 
 Use the exact public types:
 
@@ -316,13 +316,13 @@ export function mergePayloads(local: SyncPayload, remote: SyncPayload): SyncPayl
 
 Compare records by `logicalClock`, then `deviceId`, then the serialized record as a final stable tie-break. Return records sorted by key. `mergePayloads()` sets clock to `max(local.clock, remote.clock) + 1`.
 
-- [ ] **Step 4: Run merge tests and full suite**
+- [x] **Step 4: Run merge tests and full suite**
 
 Run: `npm test`
 
 Expected: all tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add sync/records.ts sync/merge.ts tests/syncMerge.test.mjs
@@ -335,7 +335,7 @@ git commit -m "feat: add deterministic sync merge"
 - Create: `sync/crypto.ts`
 - Test: `tests/syncCrypto.test.mjs`
 
-- [ ] **Step 1: Write failing encryption tests**
+- [x] **Step 1: Write failing encryption tests**
 
 Use a low iteration count only in tests by passing options. Assert round-trip, random salt/IV producing different ciphertext, wrong passphrase rejection, and tamper rejection.
 
@@ -354,13 +354,13 @@ test('wrong passphrase and tampering are rejected', async () => {
 });
 ```
 
-- [ ] **Step 2: Run encryption tests and verify RED**
+- [x] **Step 2: Run encryption tests and verify RED**
 
 Run: `node --test tests/syncCrypto.test.mjs`
 
 Expected: FAIL because `sync/crypto.ts` does not exist.
 
-- [ ] **Step 3: Implement the versioned envelope**
+- [x] **Step 3: Implement the versioned envelope**
 
 Expose:
 
@@ -381,7 +381,7 @@ export async function decryptPayload(bundle: string, passphrase: string): Promis
 
 Use `crypto.subtle`, a 16-byte salt, 12-byte IV, AES-GCM 256-bit key, and default PBKDF2 iteration count `310000`. Reject empty passphrases, malformed base64, unsupported versions, iteration counts below `1000`, and payloads whose schema is not version `1`.
 
-- [ ] **Step 4: Run crypto and complete suites**
+- [x] **Step 4: Run crypto and complete suites**
 
 Run: `npm test`
 
@@ -391,7 +391,7 @@ Run: `npm run build`
 
 Expected: production build succeeds.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add sync/crypto.ts tests/syncCrypto.test.mjs
@@ -404,11 +404,11 @@ git commit -m "feat: encrypt sync bundles in the browser"
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-09-28-local-encrypted-sync-core.md`
 
-- [ ] **Step 1: Document local migration and security boundary**
+- [x] **Step 1: Document local migration and security boundary**
 
 Add a README section stating that local data now uses IndexedDB, legacy localStorage is temporarily mirrored for rollback, cloud sync is not enabled until a provider is connected, and forgetting the later sync passphrase will make cloud ciphertext unrecoverable.
 
-- [ ] **Step 2: Run final verification**
+- [x] **Step 2: Run final verification**
 
 Run: `npm test`
 
@@ -422,7 +422,7 @@ Run: `git diff --check`
 
 Expected: no whitespace errors.
 
-- [ ] **Step 3: Mark completed plan checkboxes and commit**
+- [x] **Step 3: Mark completed plan checkboxes and commit**
 
 ```powershell
 git add README.md docs/superpowers/plans/2026-09-28-local-encrypted-sync-core.md
