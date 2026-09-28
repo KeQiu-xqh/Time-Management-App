@@ -1,5 +1,5 @@
-import type { LoginSessionService } from './loginSessionStore';
-import { deriveUserId, parseWechatTextMessage, signAppSession, verifyAppSession, verifyWechatSignature } from './wechatSecurity';
+import type { LoginSessionService } from './loginSessionStore.js';
+import { deriveUserId, parseWechatTextMessage, signAppSession, verifyAppSession, verifyWechatSignature } from './wechatSecurity.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const json = (value: unknown, status = 200, headers?: HeadersInit) => Response.json(value, { status, headers: { ...noStore, ...headers } });

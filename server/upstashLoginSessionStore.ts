@@ -1,4 +1,4 @@
-import type { LoginSessionStore } from './loginSessionStore';
+import type { LoginSessionStore } from './loginSessionStore.js';
 
 export class UpstashLoginSessionStore implements LoginSessionStore {
   constructor(private readonly url: string, private readonly token: string, private readonly fetcher: typeof fetch = fetch) {}

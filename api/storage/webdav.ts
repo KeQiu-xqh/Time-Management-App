@@ -1,4 +1,4 @@
-import { assertWebDavTarget } from '../../server/webdavTarget';
+import { assertWebDavTarget } from '../../server/webdavTarget.js';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 

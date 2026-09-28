@@ -1,5 +1,5 @@
-import { LoginSessionService } from './loginSessionStore';
-import { loginSessionStoreFromEnv } from './upstashLoginSessionStore';
+import { LoginSessionService } from './loginSessionStore.js';
+import { loginSessionStoreFromEnv } from './upstashLoginSessionStore.js';
 
 export const runtime = () => {
   const hashSecret = process.env.LOGIN_CODE_HMAC_SECRET || process.env.APP_USER_HMAC_SECRET;
