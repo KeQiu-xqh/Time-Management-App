@@ -95,3 +95,33 @@ export function decodeSnapshot(value: string): PlanSnapshot {
   }
   return validateSnapshotValue(parsed);
 }
+
+export function decodeBackup(value: string): PlanSnapshot {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error('备份文件格式无效');
+  }
+
+  if (!isRecord(parsed)) throw new Error('备份文件格式无效');
+  if (parsed.version === SNAPSHOT_VERSION) {
+    try {
+      return validateSnapshotValue(parsed);
+    } catch {
+      throw new Error('备份文件格式无效');
+    }
+  }
+
+  const recognized = ['categories', 'tasks', 'habits'].some(key => key in parsed);
+  if (!recognized) throw new Error('备份文件格式无效');
+
+  const legacyValue = (key: string): string | null => {
+    const backupKey = key.replace('planflow_', '');
+    const candidate = parsed[backupKey];
+    if (candidate === undefined || candidate === null) return null;
+    return typeof candidate === 'string' ? candidate : JSON.stringify(candidate);
+  };
+
+  return readLegacySnapshot({ getItem: legacyValue });
+}

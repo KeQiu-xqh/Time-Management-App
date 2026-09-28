@@ -8,7 +8,7 @@ const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
 }).outputText;
 const snapshotModule = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
-const { decodeSnapshot, emptySnapshot, encodeSnapshot, readLegacySnapshot } = snapshotModule;
+const { decodeBackup, decodeSnapshot, emptySnapshot, encodeSnapshot, readLegacySnapshot } = snapshotModule;
 
 const memoryStorage = (initial = {}) => {
   const values = new Map(Object.entries(initial));
@@ -74,4 +74,18 @@ test('snapshot decoder rejects invalid top-level collection shapes', () => {
     () => decodeSnapshot(JSON.stringify({ version: 1, categories: [], tasks: {}, habits: [], username: 'Qiu' })),
     /快照格式/
   );
+});
+
+test('backup decoder accepts old exports and new snapshots', () => {
+  const legacy = decodeBackup(JSON.stringify({
+    tasks: '[]',
+    habits: '[]',
+    categories: '{}',
+    username: 'Qiu'
+  }));
+  assert.equal(legacy.username, 'Qiu');
+  assert.deepEqual(legacy.tasks, []);
+
+  assert.deepEqual(decodeBackup(encodeSnapshot(emptySnapshot())).tasks, []);
+  assert.throws(() => decodeBackup('{"other":true}'), /备份文件/);
 });
