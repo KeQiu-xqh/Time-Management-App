@@ -175,7 +175,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, onToggle, viewMode,
         onClick={onClick}
         className={`habit-card bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-200 border border-transparent hover:border-indigo-50 cursor-pointer ${viewMode === 'year' ? 'col-span-full' : ''}`}
     >
-      <div className="flex justify-between items-start mb-4">
+      <div className="habit-card-header flex justify-between items-start mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-800 mb-1">{habit.title}</h3>
           <div className="flex items-center gap-1.5 text-xs font-bold text-orange-500 bg-orange-50 w-fit px-2 py-1 rounded-md">

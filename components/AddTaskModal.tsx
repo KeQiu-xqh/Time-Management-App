@@ -151,7 +151,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const resetForm = () => {
       setTitle('');
       setSelectedCategoryKey('');
-      setDoDateStr(formatDateToLocal(new Date())); // Default to today for tasks
+      setDoDateStr('');
       setDeadlineStr('');
       setIsTimeSet(false);
       setStartTime('09:00');

@@ -8,41 +8,56 @@
 /* Existing page layouts are adjusted only below the desktop breakpoint. */
 @media (max-width: 767.98px) {
   .mobile-page { padding-bottom: 24px; min-width: 0; }
-  .mobile-page-header { position: relative; padding: 20px 14px 12px; z-index: auto; backdrop-filter: none; }
-  .mobile-page-title { gap: 12px; min-width: 0; }
-  .mobile-page-title > :first-child { flex-shrink: 0; padding: 10px; border-radius: 14px; }
+  .mobile-page-header { position: relative; padding: 12px 10px 8px; z-index: auto; backdrop-filter: none; }
+  .mobile-page-title { gap: 9px; min-width: 0; }
+  .mobile-page-title > :first-child { flex-shrink: 0; padding: 8px; border-radius: 12px; }
   .mobile-page-title > :last-child { min-width: 0; }
-  .mobile-page-title h2 { font-size: 24px; line-height: 32px; }
-  .mobile-page-title p { font-size: 12px; line-height: 20px; }
-  .mobile-page-content { padding: 16px 12px 0; gap: 24px; min-width: 0; }
-  .backlog-heading { flex-wrap: wrap; gap: 12px; }
-  .backlog-heading > button { min-height: 44px; white-space: nowrap; padding: 8px 12px; margin-left: auto; }
+  .mobile-page-title svg { width: 22px; height: 22px; }
+  .mobile-page-title h2 { font-size: 20px; line-height: 26px; }
+  .mobile-page-title p { font-size: 11px; line-height: 16px; }
+  .mobile-page-content { padding: 10px 10px 0; gap: 14px; min-width: 0; }
+  .mobile-page-content.space-y-10 > :not([hidden]) ~ :not([hidden]) { margin-top: 14px; }
+  .backlog-heading { flex-wrap: nowrap; gap: 8px; }
+  .backlog-heading > button { min-height: 40px; white-space: nowrap; padding: 6px 9px; margin-left: auto; }
+  .backlog-heading > button span { font-size: 11px; }
   .backlog-section-heading { position: static; }
-  .mobile-page-content section > div:has(> h3) { flex-wrap: wrap; row-gap: 6px; }
-  .mobile-page-content h3 { font-size: 16px; }
-  .task-card { padding: 12px 10px; gap: 8px; min-width: 0; }
-  .task-card h3 { font-size: 15px; overflow-wrap: anywhere; }
-  .task-toggle { display: grid; place-items: center; width: 40px; height: 44px; margin-top: 0; }
-  .task-metadata { flex-wrap: wrap; gap: 4px 6px; }
+  .mobile-page-content section > div:has(> h3) { flex-wrap: wrap; row-gap: 4px; margin-bottom: 8px; }
+  .mobile-page-content h3 { font-size: 14px; }
+  .task-list-grid { gap: 8px; }
+  .task-card { padding: 8px; gap: 6px; min-width: 0; border-radius: 12px; }
+  .task-card h3 { font-size: 14px; line-height: 18px; overflow-wrap: anywhere; }
+  .task-card-title { margin-bottom: 3px; }
+  .task-toggle { display: grid; place-items: center; width: 40px; height: 40px; margin-top: 0; }
+  .task-toggle svg { width: 20px; height: 20px; }
+  .task-metadata { flex-wrap: wrap; gap: 2px 5px; margin-bottom: 2px; }
   .task-metadata > span { max-width: 100%; overflow-wrap: anywhere; }
-  .task-quick-plan { position: static; transform: none; opacity: 1; flex: none; width: 40px; min-height: 44px; display: grid; place-items: center; align-self: center; }
-  .habit-view-controls { gap: 8px; justify-content: space-between; }
+  .task-deadline > div { padding: 2px 6px; }
+  .task-quick-plan { position: static; transform: none; opacity: 1; flex: none; width: 40px; min-height: 40px; display: grid; place-items: center; align-self: center; }
+  .habit-view-controls { gap: 6px; justify-content: space-between; }
   .habit-view-controls button { min-height: 40px; }
-  .habit-view-controls > button { padding: 8px 14px; min-height: 44px; }
-  .habit-date-nav { padding: 4px; gap: 2px; }
+  .habit-view-controls > button { padding: 6px 10px; min-height: 40px; }
+  .habit-date-nav { padding: 2px; gap: 1px; }
   .habit-date-nav button { min-height: 40px; padding: 8px; flex-shrink: 0; }
   .habit-date-nav > div:first-of-type { font-size: 12px; letter-spacing: 0; text-align: center; }
   .habit-date-nav > div:last-child { gap: 0; }
   .habit-date-nav > div:last-child > div { display: none; }
-  .habit-card { padding: 16px 10px; min-width: 0; }
-  .habit-card h3 { overflow-wrap: anywhere; }
-  .habit-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .habit-list-grid { gap: 10px; }
+  .habit-card { padding: 10px; min-width: 0; border-radius: 12px; }
+  .habit-card-header { margin-bottom: 6px; }
+  .habit-card h3 { font-size: 15px; line-height: 19px; margin-bottom: 2px; overflow-wrap: anywhere; }
+  .habit-card-header > div > div { padding: 2px 6px; font-size: 10px; }
+  .habit-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding-top: 2px; }
   .habit-week > div { min-width: 0; }
-  .habit-week button { width: 100%; max-width: 44px; height: 44px; border-radius: 12px; }
-  .habit-month button { min-height: 40px; }
+  .habit-week > div { gap: 3px; }
+  .habit-week button { width: 100%; max-width: 38px; height: 38px; border-radius: 10px; }
+  .habit-month { gap-block: 3px; }
+  .habit-month button { min-height: 34px; }
   .habit-year { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
   .habit-year button { width: 32px; height: 32px; border-radius: 6px; }
-  .categories-page { padding-bottom: 90px; }
+  .categories-page { padding-bottom: 60px; }
+  .category-habit-card { padding: 10px; gap: 10px; }
+  .category-habit-icon { width: 38px; height: 38px; }
+  .category-habit-card h4 { margin-bottom: 0; font-size: 14px; }
   .category-tabs { gap: 8px; padding: 4px 2px 8px; }
   .category-tabs > button { min-height: 44px; }
   .category-tabs > button:last-child { min-width: 44px; }
@@ -53,7 +68,11 @@
   .category-add-form button[type=submit] { min-height: 44px; width: 100%; }
   .category-section-heading { flex-wrap: wrap; gap: 8px; }
   .category-section-heading > button { min-height: 40px; }
-  .category-create-button { bottom: calc(90px + env(safe-area-inset-bottom)); right: 16px; }
+  .category-create-button { bottom: calc(60px + env(safe-area-inset-bottom)); right: 16px; }
+  .bottom-nav { padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+  .bottom-nav-item { min-width: 48px; min-height: 40px; gap: 1px; }
+  .bottom-nav-icon { display: grid; place-items: center; padding: 4px; border-radius: 11px; }
+  .bottom-nav-label { font-size: 9px; line-height: 11px; }
   .settings-content { min-width: 0; }
   .settings-content > section + section { margin-top: 24px; }
   .settings-content button { min-height: 44px; flex-shrink: 0; }

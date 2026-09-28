@@ -77,7 +77,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, o
                     <p className="text-xs text-gray-400 mt-1">去添加一些新灵感吧！</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="task-list-grid grid grid-cols-1 gap-3">
                     {unscheduledTasks.map(task => (
                         <TaskCard 
                             key={task.id} 
@@ -106,7 +106,7 @@ export const BacklogView: React.FC<BacklogViewProps> = ({ tasks, onToggleTask, o
                     没有即将到来的任务
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="task-list-grid grid grid-cols-1 gap-3">
                     {scheduledTasks.map(task => (
                         <TaskCard 
                             key={task.id} 

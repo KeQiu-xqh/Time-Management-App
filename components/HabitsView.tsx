@@ -150,7 +150,7 @@ export const HabitsView: React.FC<HabitsViewProps> = ({ habits, categories, onTo
       </div>
 
       {/* Content */}
-      <div className={`mobile-page-content px-8 pt-6 grid grid-cols-1 gap-6 ${viewMode === 'year' ? 'max-w-full' : 'max-w-4xl md:grid-cols-2'}`}>
+      <div className={`mobile-page-content habit-list-grid px-8 pt-6 grid grid-cols-1 gap-6 ${viewMode === 'year' ? 'max-w-full' : 'max-w-4xl md:grid-cols-2'}`}>
         {habits.map(habit => (
             <HabitCard 
                 key={habit.id} 

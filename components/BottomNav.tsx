@@ -17,7 +17,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSwitch, onOp
   ];
 
   return (
-    <div style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }} className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-2 flex justify-between items-center z-50 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+    <div className="bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-3 flex justify-between items-center z-50 rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
       {navItems.map((item) => {
         const isActive = currentTab === item.id;
         const Icon = item.icon;
@@ -26,12 +26,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSwitch, onOp
           <button
             key={item.id}
             onClick={() => onSwitch(item.id)}
-            className="flex flex-col items-center gap-1 min-w-[50px] transition-all duration-300"
+            className="bottom-nav-item flex flex-col items-center justify-center transition-all duration-300"
           >
-            <div className={`p-2 rounded-2xl transition-all duration-300 ${isActive ? 'bg-app-primary text-white shadow-lg shadow-indigo-200' : 'text-gray-400 hover:bg-gray-50'}`}>
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+            <div className={`bottom-nav-icon transition-all duration-300 ${isActive ? 'bg-app-primary text-white shadow-md shadow-indigo-200' : 'text-gray-400 hover:bg-gray-50'}`}>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
-            <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-app-primary' : 'text-gray-400'}`}>
+            <span className={`bottom-nav-label font-medium transition-colors ${isActive ? 'text-app-primary' : 'text-gray-400'}`}>
               {item.label}
             </span>
           </button>
@@ -41,12 +41,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSwitch, onOp
       {/* Settings / Me Tab */}
       <button
         onClick={onOpenSettings}
-        className="flex flex-col items-center gap-1 min-w-[50px] transition-all duration-300"
+        className="bottom-nav-item flex flex-col items-center justify-center transition-all duration-300"
       >
-        <div className="p-2 rounded-2xl text-gray-400 hover:bg-gray-50 transition-all duration-300">
-          <User size={22} strokeWidth={2} />
+        <div className="bottom-nav-icon text-gray-400 hover:bg-gray-50 transition-all duration-300">
+          <User size={20} strokeWidth={2} />
         </div>
-        <span className="text-[10px] font-medium text-gray-400">
+        <span className="bottom-nav-label font-medium text-gray-400">
           我的
         </span>
       </button>

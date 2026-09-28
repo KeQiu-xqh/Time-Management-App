@@ -193,8 +193,8 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                         placeholder="新分类名称..."
                         className="flex-1 w-full px-4 py-2 bg-gray-50 rounded-xl outline-none focus:ring-2 focus:ring-app-primary/20"
                     />
-                    <div className="flex gap-2">
-                         {CATEGORY_COLORS.slice(0, 5).map((color, idx) => (
+                    <div className="category-color-palette flex flex-wrap gap-2">
+                         {CATEGORY_COLORS.map((color, idx) => (
                             <button
                                 key={idx}
                                 aria-label={`分类颜色 ${idx + 1}`}
@@ -235,7 +235,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase mb-2">颜色主题</label>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="category-color-palette flex flex-wrap gap-3">
                                 {CATEGORY_COLORS.map((color, idx) => (
                                     <button
                                         key={idx}
@@ -285,9 +285,9 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                         <div 
                             key={habit.id} 
                             onClick={() => onEditHabit(habit)}
-                            className="group bg-white rounded-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-transparent hover:border-orange-200 transition-all flex items-center gap-4 cursor-pointer active:scale-95"
+                            className="category-habit-card group bg-white rounded-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-transparent hover:border-orange-200 transition-all flex items-center gap-4 cursor-pointer active:scale-95"
                         >
-                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-orange-500 bg-orange-50 group-hover:bg-orange-100 transition-colors`}>
+                             <div className="category-habit-icon w-12 h-12 rounded-xl flex items-center justify-center text-orange-500 bg-orange-50 group-hover:bg-orange-100 transition-colors">
                                  <RefreshCw size={20} />
                              </div>
                              <div className="flex-1 min-w-0">
@@ -332,7 +332,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                 <>
                     {/* Active Tasks */}
                     {activeTasks.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="task-list-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {activeTasks.map(task => (
                                 <TaskCard 
                                     key={task.id} 
@@ -354,7 +354,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                                     <div className="h-px bg-gray-300 flex-1"></div>
                                 </div>
                             )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-50 hover:opacity-100 transition-opacity">
+                            <div className="task-list-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-50 hover:opacity-100 transition-opacity">
                                 {completedTasks.map(task => (
                                     <TaskCard 
                                         key={task.id} 

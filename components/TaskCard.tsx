@@ -163,13 +163,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {/* Title */}
-        <h3 className={`text-[17px] font-bold leading-snug mb-2 ${task.isCompleted ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
+        <h3 className={`task-card-title text-[17px] font-bold leading-snug mb-2 ${task.isCompleted ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
           {task.title}
         </h3>
 
         {/* Deadline & Overdue Warning (Only for Tasks) */}
         {!isHabit && (task.deadline) && !task.isCompleted && (
-          <div className="flex justify-start">
+          <div className="task-deadline flex justify-start">
             <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg transition-colors ${
               isDeadlineOverdue 
                 ? 'bg-red-50 text-red-500' 

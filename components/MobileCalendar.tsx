@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Inbox, X, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Inbox, X, Check, List, Clock3 } from 'lucide-react';
 import { Task, Habit } from '../types';
 import { dateKey, shiftDay, monday, timeMinutes, timeLabel, gestureRange } from './calendarGesture';
 import { formatDurationHours } from './taskDuration';
+import { calendarTaskGroups } from './mobileCalendarList';
 import './MobileCalendar.css';
 
 interface Props {
@@ -29,6 +30,7 @@ const weekLabels = ['一', '二', '三', '四', '五', '六', '日'];
 export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask, onEditTask, onToggleTask, onEditHabit, onToggleHabit, onAddTask }: Props) {
   const [selected, setSelected] = useState(() => new Date());
   const [mode, setMode] = useState<'week' | 'day' | 'month'>('week');
+  const [displayMode, setDisplayMode] = useState<'timeline' | 'list'>('timeline');
   const [backlog, setBacklog] = useState(false);
   const [detail, setDetail] = useState<Task | null>(null);
   const [dragStep, setDragStep] = useState(1);
@@ -134,6 +136,7 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
   const shownTasks = tasks.map(t => preview?.task.id === t.id && preview.target !== 'backlog'
     ? { ...t, doDate: preview.previewDate, startTime: preview.target === 'allDay' ? undefined : timeLabel(preview.previewStart), duration: preview.previewDuration }
     : t);
+  const listGroups = calendarTaskGroups(shownTasks, days);
   const selectDay = (date: Date) => { setSelected(date); setMode('day'); };
   const nudgeDetail = (action: 'move' | 'end', minutes: number) => {
     if (!detail?.doDate || !detail.startTime) return;
@@ -160,6 +163,31 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
     </div>;
   };
 
+  const listRow = (task: Task) => {
+    const duration = task.duration || 30;
+    const time = task.startTime
+      ? `${task.startTime}–${timeLabel(timeMinutes(task.startTime) + duration)}`
+      : '全天';
+    return <div className={`mc-list-row ${task.isCompleted ? 'mc-list-completed' : ''}`} key={task.id}>
+      <button
+        className="mc-list-check"
+        aria-label={`${task.isCompleted ? '取消完成' : '完成'}：${task.title}`}
+        aria-pressed={task.isCompleted}
+        onClick={() => onToggleTask(task.id)}
+      >
+        {task.isCompleted ? <Check size={15} /> : <span />}
+      </button>
+      <button className="mc-list-content" onClick={() => setDetail(task)}>
+        <span className="mc-list-time">{time}</span>
+        <strong>{task.title}</strong>
+        {(task.category || task.estimatedDuration) && <small>
+          {task.category?.name}{task.category && task.estimatedDuration ? ' · ' : ''}
+          {task.estimatedDuration ? `预估 ${formatDurationHours(task.estimatedDuration)}` : ''}
+        </small>}
+      </button>
+    </div>;
+  };
+
   return <div ref={root} className="mc-calendar"
     onPointerMove={e => { const g = gesture.current; if (g?.pointerId === e.pointerId) { g.lastX = e.clientX; g.lastY = e.clientY; updateGesture(); } }}
     onPointerUp={e => finish(e)} onPointerCancel={e => finish(e, true)} onLostPointerCapture={e => finish(e, true)}>
@@ -168,24 +196,43 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
         <div className="mc-header-actions"><button data-backlog-target aria-label="打开待办池" className={preview?.target === 'backlog' ? 'mc-drop-active' : ''} onClick={() => setBacklog(true)}><Inbox size={18} /><span>{preview ? '退回' : `待办 ${unscheduled.length}`}</span></button>
           <button className="mc-add" aria-label="新建任务" onClick={onAddTask}><Plus size={21} /></button></div>
       </div>
-      <div className="mc-toolbar"><div className="mc-modes">{(['day', 'week', 'month'] as const).map(m => <button key={m} aria-pressed={mode === m} onClick={() => setMode(m)}>{m === 'day' ? '日' : m === 'week' ? '周' : '月'}</button>)}</div>
-        <div className="mc-navigation"><button aria-label="上一个日期范围" onClick={() => navigate(-1)}><ChevronLeft size={18} /></button><button onClick={() => setSelected(new Date())}>今天</button><button aria-label="下一个日期范围" onClick={() => navigate(1)}><ChevronRight size={18} /></button></div></div>
-      {mode !== 'month' && <label className="mc-precision">拖动精度<select aria-label="拖动精度" value={dragStep} onChange={e => setDragStep(Number(e.target.value))}><option value={1}>1 分钟</option><option value={5}>5 分钟</option><option value={15}>15 分钟</option></select><span>点任务也可逐分钟微调</span></label>}
+      <div className="mc-toolbar">
+        <div className="mc-modes">{(['day', 'week', 'month'] as const).map(m => <button key={m} aria-pressed={mode === m} onClick={() => setMode(m)}>{m === 'day' ? '日' : m === 'week' ? '周' : '月'}</button>)}</div>
+        {mode !== 'month' && <>
+          <label className="mc-precision" title="拖动精度">
+            <span className="mc-sr-only">拖动精度</span>
+            <select aria-label="拖动精度" value={dragStep} onChange={e => setDragStep(Number(e.target.value))}><option value={1}>1m</option><option value={5}>5m</option><option value={15}>15m</option></select>
+          </label>
+          <button className="mc-display-toggle" aria-label={displayMode === 'list' ? '切换到时间轴' : '切换到列表'} title={displayMode === 'list' ? '时间轴' : '列表'} onClick={() => setDisplayMode(current => current === 'list' ? 'timeline' : 'list')}>
+            {displayMode === 'list' ? <Clock3 size={17} /> : <List size={18} />}
+          </button>
+        </>}
+        <div className="mc-navigation"><button aria-label="上一个日期范围" onClick={() => navigate(-1)}><ChevronLeft size={18} /></button><button onClick={() => setSelected(new Date())}>今天</button><button aria-label="下一个日期范围" onClick={() => navigate(1)}><ChevronRight size={18} /></button></div>
+      </div>
     </header>
 
     {mode === 'month' ? <div className="mc-month"><div className="mc-month-labels">{weekLabels.map(d => <span key={d}>{d}</span>)}</div><div className="mc-month-grid">{Array.from({ length: 42 }, (_, i) => {
       const date = shiftDay(monday(new Date(selected.getFullYear(), selected.getMonth(), 1)), i);
       const dayTasks = tasks.filter(t => t.doDate && dateKey(new Date(t.doDate)) === dateKey(date));
       return <button key={dateKey(date)} className={`${dateKey(date) === today ? 'mc-today' : ''} ${date.getMonth() !== selected.getMonth() ? 'mc-muted' : ''}`} onClick={() => selectDay(date)}><b>{date.getDate()}</b>{dayTasks.slice(0, 3).map(t => <span key={t.id}>{t.title}</span>)}{dayTasks.length > 3 && <small>+{dayTasks.length - 3}</small>}</button>;
-    })}</div></div> : <>
+    })}</div></div> : displayMode === 'list' ? <div className="mc-list">
+      {listGroups.map(group => <section className="mc-list-group" key={dateKey(group.date)}>
+        <header>
+          <span><b>{group.date.getMonth() + 1}/{group.date.getDate()}</b> 周{weekLabels[(group.date.getDay() + 6) % 7]}</span>
+          <small>{group.tasks.length} 项</small>
+        </header>
+        <div>{group.tasks.length ? group.tasks.map(listRow) : <p className="mc-list-empty">无任务</p>}</div>
+      </section>)}
+    </div> : <>
       <div className="mc-day-header" style={{ gridTemplateColumns: `34px repeat(${days.length}, minmax(0, 1fr))` }}><span className="mc-zone">日期</span>{days.map(date => <button key={dateKey(date)} className={dateKey(date) === today ? 'mc-today' : ''} onClick={() => selectDay(date)}><span>{weekLabels[(date.getDay() + 6) % 7]}</span><b>{date.getDate()}</b></button>)}</div>
       <div ref={allDay} className={`mc-all-day ${preview?.target === 'allDay' ? 'mc-drop-active' : ''}`} style={{ gridTemplateColumns: `34px repeat(${days.length}, minmax(0, 1fr))` }}><span className="mc-zone">全天</span>{days.map(date => <div key={dateKey(date)}>{shownTasks.filter(t => t.doDate && !t.startTime && dateKey(new Date(t.doDate)) === dateKey(date)).map(t => taskBlock(t, false))}</div>)}</div>
       <div className="mc-scroll" ref={scroll}><div className="mc-timeline"><div className="mc-hours">{Array.from({ length: 24 }, (_, h) => <span key={h} style={{ top: h * HOUR }}>{String(h).padStart(2, '0')}</span>)}</div><div ref={grid} className="mc-grid" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>{days.map(date => <div className={`mc-day-column ${dateKey(date) === today ? 'mc-today-column' : ''}`} key={dateKey(date)} data-date={dateKey(date)}>
         {shownTasks.filter(t => t.doDate && t.startTime && dateKey(new Date(t.doDate)) === dateKey(date)).map(t => taskBlock(t, true))}
       </div>)}</div></div></div>
-      <div className="mc-hint" role="status">{preview ? `${preview.previewDate.getMonth() + 1}/${preview.previewDate.getDate()} · ${preview.target === 'backlog' ? '松开退回待办池' : preview.target === 'allDay' ? '松开设为全天' : `${timeLabel(preview.previewStart)}–${timeLabel(preview.previewStart + preview.previewDuration)}`}` : '拖动任务改时间 · 拖上下边缘改时长 · 滑动空白处浏览'}</div>
-      {habits.length > 0 && <details className="mc-habits"><summary>习惯打卡 · {selected.getMonth() + 1}/{selected.getDate()}</summary><div>{habits.map(h => <div key={h.id}><button aria-label={`打卡 ${h.title}`} onClick={() => onToggleHabit(h.id, dateKey(selected))}>{h.completedDates.includes(dateKey(selected)) ? <Check size={18} /> : <span className="mc-check-empty" />}</button><button onClick={() => onEditHabit(h)}>{h.title}</button></div>)}</div></details>}
+      {preview && <div className="mc-hint" role="status">{`${preview.previewDate.getMonth() + 1}/${preview.previewDate.getDate()} · ${preview.target === 'backlog' ? '松开退回待办池' : preview.target === 'allDay' ? '松开设为全天' : `${timeLabel(preview.previewStart)}–${timeLabel(preview.previewStart + preview.previewDuration)}`}`}</div>}
     </>}
+    {mode !== 'month' && habits.length > 0 && <details className="mc-habits"><summary>习惯打卡 · {selected.getMonth() + 1}/{selected.getDate()}</summary><div>{habits.map(h => <div key={h.id}><button aria-label={`打卡 ${h.title}`} onClick={() => onToggleHabit(h.id, dateKey(selected))}>{h.completedDates.includes(dateKey(selected)) ? <Check size={18} /> : <span className="mc-check-empty" />}</button><button onClick={() => onEditHabit(h)}>{h.title}</button></div>)}</div></details>}
+    <span className="mc-sr-only">时间轴中可拖动任务改时间，并拖动上下边缘调整时长。</span>
     <span className="mc-sr-only" aria-live="polite">{announcement}</span>
     {detail && <div className="mc-backlog-overlay"><button className="mc-backdrop" aria-label="关闭任务详情" onClick={() => setDetail(null)} /><section className="mc-backlog" role="dialog" aria-label="任务详情">
       <header><h3>{detail.title}</h3><button aria-label="关闭任务详情" onClick={() => setDetail(null)}><X size={20} /></button></header>

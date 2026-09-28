@@ -440,11 +440,11 @@ const App: React.FC = () => {
       />
       <main className="flex-1 min-w-0 h-full overflow-hidden bg-app-bg relative flex flex-col">
         {activeTab === Tab.Calendar ? (
-           <div className="flex-1 min-h-0 w-full overflow-hidden pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
+           <div className="flex-1 min-h-0 w-full overflow-hidden pb-[calc(50px+env(safe-area-inset-bottom))] md:pb-0">
               {renderContent()}
            </div>
         ) : (
-           <div className="h-full w-full overflow-y-auto no-scrollbar pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
+           <div className="h-full w-full overflow-y-auto no-scrollbar pb-[calc(50px+env(safe-area-inset-bottom))] md:pb-0">
               <div className="max-w-7xl mx-auto min-h-full">
                 {renderContent()}
               </div>
