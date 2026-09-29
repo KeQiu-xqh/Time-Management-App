@@ -139,7 +139,7 @@ Expected: production build succeeds.
 
 At a 390 x 844 viewport, create one unscheduled ordinary task and one scheduled repeating task. Complete the ordinary task from the backlog, complete the scheduled task from calendar list mode, and repeat the ordinary completion at a desktop viewport. Confirm the page remains rendered and no console error is emitted.
 
-- [ ] **Step 3: Commit and push only scoped files**
+- [x] **Step 3: Commit and push only scoped files**
 
 ```bash
 git add components/recurrence.ts tests/recurrence.test.mjs docs/superpowers/plans/2026-09-29-safe-task-completion.md
@@ -147,6 +147,6 @@ git commit -m "fix: prevent task completion crashes"
 git push origin main
 ```
 
-- [ ] **Step 4: Verify production deployment**
+- [x] **Step 4: Verify production deployment**
 
 Confirm the Vercel production HTML references the newly built JavaScript asset and that the deployed bundle contains the lazy successor-ID guard. Confirm remote `main` equals local `HEAD`.
