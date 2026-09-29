@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Inbox, X, Check, List, Clock3 } from 'lucide-react';
 import { Task, Habit } from '../types';
-import { dateKey, shiftDay, monday, timeMinutes, timeLabel, gestureRange } from './calendarGesture';
+import {
+  dateKey, shiftDay, monday, timeMinutes, timeLabel, gestureRange,
+  LONG_PRESS_MS, HAPTIC_MS, requiresCalendarLongPress, exceedsTouchSlop,
+} from './calendarGesture';
 import { formatDurationHours } from './taskDuration';
 import { calendarTaskGroups } from './mobileCalendarList';
 import './MobileCalendar.css';
@@ -19,6 +22,7 @@ interface Props {
 }
 type Gesture = {
   task: Task; mode: 'move' | 'start' | 'end'; pointerId: number;
+  pointerType: string; phase: 'pending' | 'active' | 'cancelled';
   x: number; y: number; lastX: number; lastY: number; scroll: number;
   originalDate: Date; start: number; duration: number; moved: boolean;
   previewDate: Date; previewStart: number; previewDuration: number;
@@ -42,6 +46,7 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
   const allDay = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
   const frame = useRef<number>(0);
+  const longPressTimer = useRef<number | null>(null);
   const suppressClick = useRef(false);
   const days = mode === 'day' ? [selected] : Array.from({ length: 7 }, (_, i) => shiftDay(monday(selected), i));
   const unscheduled = tasks.filter(t => !t.doDate && !t.isCompleted);
@@ -50,12 +55,24 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
   useEffect(() => {
     if (scroll.current) scroll.current.scrollTop = HOUR * 8 - 16;
   }, [mode]);
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  useEffect(() => () => {
+    if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+    cancelAnimationFrame(frame.current);
+    const active = gesture.current;
+    if (active && root.current?.hasPointerCapture(active.pointerId)) root.current.releasePointerCapture(active.pointerId);
+    gesture.current = null;
+  }, []);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current === null) return;
+    window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  };
 
   const updateGesture = () => {
     const g = gesture.current;
     const bounds = grid.current?.getBoundingClientRect();
-    if (!g || !bounds || !scroll.current) return;
+    if (!g || g.phase !== 'active' || !bounds || !scroll.current) return;
     const dx = g.lastX - g.x;
     const dy = g.lastY - g.y;
     if (!g.moved && Math.hypot(dx, dy) < 6) return;
@@ -82,7 +99,7 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
   const autoScroll = () => {
     const g = gesture.current;
     const el = scroll.current;
-    if (!g || !el) return;
+    if (!g || g.phase !== 'active' || !el) return;
     if (g.moved && g.target === 'time') {
       const rect = el.getBoundingClientRect();
       const speed = g.lastY < rect.top + 40 ? -8 : g.lastY > rect.bottom - 40 ? 8 : 0;
@@ -91,34 +108,80 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
     frame.current = requestAnimationFrame(autoScroll);
   };
 
+  const activateGesture = () => {
+    const g = gesture.current;
+    if (!g || g.phase !== 'pending') return;
+    clearLongPressTimer();
+    g.phase = 'active';
+    suppressClick.current = true;
+    try { root.current?.setPointerCapture(g.pointerId); } catch { /* Pointer may have ended at the activation boundary. */ }
+    if (typeof navigator.vibrate === 'function') navigator.vibrate(HAPTIC_MS);
+    setAnnouncement(g.mode === 'move' ? '已进入移动模式' : g.mode === 'start' ? '已进入调整开始时间模式' : '已进入调整结束时间模式');
+    setPreview({ ...g });
+    frame.current = requestAnimationFrame(autoScroll);
+  };
+
+  const cancelGesture = () => {
+    const g = gesture.current;
+    clearLongPressTimer();
+    cancelAnimationFrame(frame.current);
+    gesture.current = null;
+    setPreview(null);
+    suppressClick.current = true;
+    if (g && root.current?.hasPointerCapture(g.pointerId)) root.current.releasePointerCapture(g.pointerId);
+  };
+
   const begin = (e: React.PointerEvent, task: Task, action: Gesture['mode']) => {
     if (e.button !== 0 || gesture.current || !task.doDate || !scroll.current) return;
     e.stopPropagation();
     suppressClick.current = false;
     const start = timeMinutes(task.startTime || '09:00');
     const duration = task.duration || 30;
-    gesture.current = {
-      task, mode: action, pointerId: e.pointerId, x: e.clientX, y: e.clientY,
+    const nextGesture: Gesture = {
+      task, mode: action, pointerId: e.pointerId, pointerType: e.pointerType, phase: 'pending', x: e.clientX, y: e.clientY,
       lastX: e.clientX, lastY: e.clientY, scroll: scroll.current.scrollTop,
       originalDate: new Date(task.doDate), start, duration, moved: false,
       previewDate: new Date(task.doDate), previewStart: start, previewDuration: duration, target: 'time',
     };
-    // Capture on the stable calendar root: the task may move to another day column.
-    root.current?.setPointerCapture(e.pointerId);
-    frame.current = requestAnimationFrame(autoScroll);
+    gesture.current = nextGesture;
+    if (requiresCalendarLongPress(e.pointerType)) {
+      longPressTimer.current = window.setTimeout(() => activateGesture(), LONG_PRESS_MS);
+    } else {
+      activateGesture();
+    }
+  };
+
+  const moveGesture = (e: React.PointerEvent) => {
+    const g = gesture.current;
+    if (!g || g.pointerId !== e.pointerId) return;
+    g.lastX = e.clientX;
+    g.lastY = e.clientY;
+    if (g.phase === 'pending') {
+      if (exceedsTouchSlop(g.x, g.y, e.clientX, e.clientY)) {
+        clearLongPressTimer();
+        g.phase = 'cancelled';
+        suppressClick.current = true;
+      }
+      return;
+    }
+    if (g.phase !== 'active') return;
+    e.preventDefault();
+    updateGesture();
   };
 
   const finish = (e: React.PointerEvent, cancelled = false) => {
     const g = gesture.current;
     if (!g || g.pointerId !== e.pointerId) return;
+    clearLongPressTimer();
     cancelAnimationFrame(frame.current);
     gesture.current = null;
     setPreview(null);
     if (root.current?.hasPointerCapture(e.pointerId)) root.current.releasePointerCapture(e.pointerId);
-    if (cancelled) { suppressClick.current = true; return; }
+    if (g.phase === 'pending') return;
+    suppressClick.current = true;
+    if (cancelled || g.phase === 'cancelled') return;
     if (!g.moved) {
-      suppressClick.current = true;
-      setDetail(g.task);
+      if (g.pointerType === 'mouse') setDetail(g.task);
       return;
     }
     if (g.target === 'backlog') {
@@ -149,7 +212,7 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
     const minutes = timeMinutes(task.startTime || '09:00');
     const duration = task.duration || 30;
     return <div key={task.id} role="button" tabIndex={0}
-      aria-label={`${task.title}，${timed ? `${task.startTime} 至 ${timeLabel(minutes + duration)}` : '全天'}，拖动调整或点击查看`}
+      aria-label={`${task.title}，${timed ? `${task.startTime} 至 ${timeLabel(minutes + duration)}` : '全天'}，轻点查看，长按调整`}
       data-task-id={task.id}
       className={`mc-task ${timed ? 'mc-timed' : 'mc-all-task'} ${timed && duration < 30 ? 'mc-short' : ''} ${active ? 'mc-active' : ''} ${task.isCompleted ? 'mc-completed' : ''}`}
       style={timed ? { top: minutes / 60 * HOUR, height: Math.max(16, duration / 60 * HOUR) } : undefined}
@@ -189,7 +252,8 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
   };
 
   return <div ref={root} className="mc-calendar"
-    onPointerMove={e => { const g = gesture.current; if (g?.pointerId === e.pointerId) { g.lastX = e.clientX; g.lastY = e.clientY; updateGesture(); } }}
+    onPointerDownCapture={e => { const g = gesture.current; if (g && g.pointerId !== e.pointerId) { e.stopPropagation(); cancelGesture(); } }}
+    onPointerMove={moveGesture}
     onPointerUp={e => finish(e)} onPointerCancel={e => finish(e, true)} onLostPointerCapture={e => finish(e, true)}>
     <header className="mc-header">
       <div className="mc-heading"><div><span className="mc-eyebrow">我的日程</span><h2>{selected.getFullYear()}年 <strong>{selected.getMonth() + 1}月</strong></h2></div>
@@ -229,10 +293,12 @@ export function MobileCalendar({ tasks, habits, onScheduleTask, onUnscheduleTask
       <div className="mc-scroll" ref={scroll}><div className="mc-timeline"><div className="mc-hours">{Array.from({ length: 24 }, (_, h) => <span key={h} style={{ top: h * HOUR }}>{String(h).padStart(2, '0')}</span>)}</div><div ref={grid} className="mc-grid" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>{days.map(date => <div className={`mc-day-column ${dateKey(date) === today ? 'mc-today-column' : ''}`} key={dateKey(date)} data-date={dateKey(date)}>
         {shownTasks.filter(t => t.doDate && t.startTime && dateKey(new Date(t.doDate)) === dateKey(date)).map(t => taskBlock(t, true))}
       </div>)}</div></div></div>
-      {preview && <div className="mc-hint" role="status">{`${preview.previewDate.getMonth() + 1}/${preview.previewDate.getDate()} · ${preview.target === 'backlog' ? '松开退回待办池' : preview.target === 'allDay' ? '松开设为全天' : `${timeLabel(preview.previewStart)}–${timeLabel(preview.previewStart + preview.previewDuration)}`}`}</div>}
+      {preview && <div className="mc-hint" role="status">{preview.moved
+        ? `${preview.previewDate.getMonth() + 1}/${preview.previewDate.getDate()} · ${preview.target === 'backlog' ? '松开退回待办池' : preview.target === 'allDay' ? '松开设为全天' : `${timeLabel(preview.previewStart)}–${timeLabel(preview.previewStart + preview.previewDuration)}`}`
+        : preview.mode === 'move' ? '已激活 · 拖动任务调整时间' : preview.mode === 'start' ? '已激活 · 拖动顶部调整开始时间' : '已激活 · 拖动底部调整结束时间'}</div>}
     </>}
     {mode !== 'month' && habits.length > 0 && <details className="mc-habits"><summary>习惯打卡 · {selected.getMonth() + 1}/{selected.getDate()}</summary><div>{habits.map(h => <div key={h.id}><button aria-label={`打卡 ${h.title}`} onClick={() => onToggleHabit(h.id, dateKey(selected))}>{h.completedDates.includes(dateKey(selected)) ? <Check size={18} /> : <span className="mc-check-empty" />}</button><button onClick={() => onEditHabit(h)}>{h.title}</button></div>)}</div></details>}
-    <span className="mc-sr-only">时间轴中可拖动任务改时间，并拖动上下边缘调整时长。</span>
+    <span className="mc-sr-only">手机端长按任务后拖动改时间，长按上下边缘后拖动调整时长；电脑端可直接拖动。</span>
     <span className="mc-sr-only" aria-live="polite">{announcement}</span>
     {detail && <div className="mc-backlog-overlay"><button className="mc-backdrop" aria-label="关闭任务详情" onClick={() => setDetail(null)} /><section className="mc-backlog" role="dialog" aria-label="任务详情">
       <header><h3>{detail.title}</h3><button aria-label="关闭任务详情" onClick={() => setDetail(null)}><X size={20} /></button></header>
