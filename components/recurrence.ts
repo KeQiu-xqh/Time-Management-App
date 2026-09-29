@@ -1,13 +1,36 @@
 import type { Task, RepeatRule } from '../types';
 
 const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const parse = (value: string) => {
+const invalidDate = () => new Date(Number.NaN);
+const parse = (value: unknown) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return invalidDate();
   const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  const date = new Date(year, month - 1, day);
+  return Number.isFinite(date.getTime()) && key(date) === value ? date : invalidDate();
 };
 const dayNumber = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
 const addDays = (d: Date, days: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
 const weekStart = (d: Date) => addDays(d, -((d.getDay() + 6) % 7));
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+type RandomUuid = () => string;
+type RandomNumber = () => number;
+
+export function createTaskId(
+  randomUUID: RandomUuid | undefined = typeof globalThis.crypto?.randomUUID === 'function'
+    ? () => globalThis.crypto.randomUUID()
+    : undefined,
+  random: RandomNumber = Math.random
+): string {
+  try {
+    const id = randomUUID?.();
+    if (id) return id;
+  } catch {
+    // Some embedded mobile browsers expose randomUUID but throw when it is called.
+  }
+  return random().toString(36).slice(2) || `task-${Date.now().toString(36)}`;
+}
 
 export function rescheduleTask(task: Task, date: Date, startTime?: string | null, duration?: number): Task {
   const changedDate = !task.doDate || key(new Date(task.doDate)) !== key(date);
@@ -30,16 +53,40 @@ export function rescheduleTask(task: Task, date: Date, startTime?: string | null
   };
 }
 
-export function nextRepeatTask(task: Task, tasks: Task[], id = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)): Task | undefined {
+export function nextRepeatTask(
+  task: Task,
+  tasks: Task[],
+  id?: string,
+  idFactory: () => string = createTaskId
+): Task | undefined {
   if (!task.doDate || !task.repeat || task.repeat === 'none' || tasks.some(t => t.repeatParentId === task.id)) return;
   const current = new Date(task.doDate);
   if (!Number.isFinite(current.getTime())) return;
-  const rule: RepeatRule | undefined = task.repeat === 'custom' ? task.repeatRule : {
-    interval: 1,
-    unit: task.repeat === 'daily' ? 'day' : task.repeat === 'weekly' ? 'week' : 'month',
-  };
-  if (!rule || !Number.isInteger(rule.interval) || rule.interval < 1 || rule.interval > 999) return;
-  const anchor = task.repeatAnchorDate ? parse(task.repeatAnchorDate) : current;
+
+  let rule: RepeatRule;
+  if (task.repeat === 'custom') {
+    const rawRule = task.repeatRule as unknown;
+    if (!isRecord(rawRule)) return;
+    const { interval, unit, weekdays, until } = rawRule;
+    if (!Number.isInteger(interval) || (interval as number) < 1 || (interval as number) > 999) return;
+    if (unit !== 'day' && unit !== 'week' && unit !== 'month') return;
+    if (weekdays !== undefined && (!Array.isArray(weekdays)
+      || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6))) return;
+    if (until !== undefined && (typeof until !== 'string' || !Number.isFinite(parse(until).getTime()))) return;
+    rule = {
+      interval: interval as number,
+      unit,
+      weekdays: weekdays as number[] | undefined,
+      until: until as string | undefined,
+    };
+  } else {
+    rule = {
+      interval: 1,
+      unit: task.repeat === 'daily' ? 'day' : task.repeat === 'weekly' ? 'week' : 'month',
+    };
+  }
+
+  const anchor = task.repeatAnchorDate === undefined ? current : parse(task.repeatAnchorDate);
   if (!Number.isFinite(anchor.getTime())) return;
   let next: Date;
   if (rule.unit === 'day') {
@@ -64,7 +111,9 @@ export function nextRepeatTask(task: Task, tasks: Task[], id = globalThis.crypto
   } else return;
   if (!next || (rule.until && key(next) > rule.until)) return;
   const deadline = task.deadline ? addDays(new Date(task.deadline), dayNumber(next) - dayNumber(current)) : undefined;
-  return { ...task, id, isCompleted: false, doDate: next, deadline,
+  const successorId = id ?? idFactory();
+  if (typeof successorId !== 'string' || !successorId.trim()) return;
+  return { ...task, id: successorId, isCompleted: false, doDate: next, deadline,
     repeatAnchorDate: task.repeatAnchorDate || key(current), repeatParentId: task.id };
 }
 

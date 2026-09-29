@@ -15,7 +15,7 @@
 **Files:**
 - Modify: `tests/recurrence.test.mjs`
 
-- [ ] **Step 1: Add tests for lazy ID generation and malformed legacy values**
+- [x] **Step 1: Add tests for lazy ID generation and malformed legacy values**
 
 Add tests that call the desired four-argument API:
 
@@ -52,7 +52,7 @@ test('task id creation falls back when randomUUID throws', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/recurrence.test.mjs`
 
@@ -64,7 +64,7 @@ Expected: FAIL because `createTaskId` is not exported and `nextRepeatTask` does 
 - Modify: `components/recurrence.ts`
 - Test: `tests/recurrence.test.mjs`
 
-- [ ] **Step 1: Add a browser-safe ID helper**
+- [x] **Step 1: Add a browser-safe ID helper**
 
 Implement:
 
@@ -88,11 +88,11 @@ export function createTaskId(
 }
 ```
 
-- [ ] **Step 2: Validate runtime recurrence values before use**
+- [x] **Step 2: Validate runtime recurrence values before use**
 
 Change the local date parser to accept `unknown`, return an invalid date for non-strings or malformed local dates, validate custom rule objects and `weekdays` arrays, and reject a present non-string `repeatAnchorDate`.
 
-- [ ] **Step 3: Generate successor IDs only after eligibility is proven**
+- [x] **Step 3: Generate successor IDs only after eligibility is proven**
 
 Change the signature to:
 
@@ -107,7 +107,7 @@ export function nextRepeatTask(
 
 Perform all early returns and compute the next date first. Immediately before returning a successor, use `const successorId = id ?? idFactory();`. Reject an empty generated ID.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/recurrence.test.mjs`
 
@@ -121,7 +121,7 @@ Expected: all recurrence tests pass, including the new compatibility regressions
 - Verify: `components/BacklogView.tsx`
 - Verify: `components/TaskCard.tsx`
 
-- [ ] **Step 1: Run the full automated checks**
+- [x] **Step 1: Run the full automated checks**
 
 Run: `npm test`
 
@@ -135,7 +135,7 @@ Run: `npm run build`
 
 Expected: production build succeeds.
 
-- [ ] **Step 2: Verify completion in three UI paths**
+- [x] **Step 2: Verify completion in three UI paths**
 
 At a 390 x 844 viewport, create one unscheduled ordinary task and one scheduled repeating task. Complete the ordinary task from the backlog, complete the scheduled task from calendar list mode, and repeat the ordinary completion at a desktop viewport. Confirm the page remains rendered and no console error is emitted.
 

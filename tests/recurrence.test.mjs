@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 const source = readFileSync(new URL('../components/recurrence.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { nextRepeatTask, rescheduleTask } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const { createTaskId, nextRepeatTask, rescheduleTask } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 const local = d => d && [d.getFullYear(), d.getMonth() + 1, d.getDate()];
 const task = (date, rule) => ({ id: 'root', title: 'test', doDate: date, isCompleted: false, startTime: '09:03', duration: 7, repeat: 'custom', repeatRule: rule });
 
@@ -104,4 +104,44 @@ test('explicit or previously adjusted card duration takes priority over estimate
   const adjusted = { ...estimated, duration: 75 };
   assert.equal(rescheduleTask(adjusted, new Date(2026, 8, 29), '09:00').duration, 75);
   assert.equal(rescheduleTask(estimated, new Date(2026, 8, 29), null).duration, undefined);
+});
+
+test('ineligible tasks complete without touching the successor id provider', () => {
+  let calls = 0;
+  const idFactory = () => {
+    calls += 1;
+    throw new Error('unsupported randomUUID');
+  };
+  const ordinary = { id: 'ordinary', title: 'ordinary', isCompleted: false, repeat: 'none' };
+
+  assert.doesNotThrow(() => nextRepeatTask(ordinary, [], undefined, idFactory));
+  assert.equal(nextRepeatTask(ordinary, [], undefined, idFactory), undefined);
+  assert.equal(calls, 0);
+});
+
+test('eligible recurrence generates its id only after validation', () => {
+  let calls = 0;
+  const original = task(new Date(2026, 8, 26), { interval: 1, unit: 'day' });
+  const next = nextRepeatTask(original, [], undefined, () => {
+    calls += 1;
+    return 'lazy-id';
+  });
+
+  assert.equal(next.id, 'lazy-id');
+  assert.equal(calls, 1);
+});
+
+test('malformed legacy recurrence data is ignored instead of throwing', () => {
+  const original = task(new Date(2026, 8, 26), { interval: 1, unit: 'week', weekdays: [1] });
+  const badAnchor = { ...original, repeatAnchorDate: 123 };
+  const badWeekdays = { ...original, repeatRule: { interval: 1, unit: 'week', weekdays: '1' } };
+
+  assert.doesNotThrow(() => nextRepeatTask(badAnchor, []));
+  assert.equal(nextRepeatTask(badAnchor, []), undefined);
+  assert.doesNotThrow(() => nextRepeatTask(badWeekdays, []));
+  assert.equal(nextRepeatTask(badWeekdays, []), undefined);
+});
+
+test('task id creation falls back when randomUUID throws', () => {
+  assert.equal(createTaskId(() => { throw new Error('not supported'); }, () => 0.5), 'i');
 });
