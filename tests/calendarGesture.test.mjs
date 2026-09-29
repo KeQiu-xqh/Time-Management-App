@@ -5,7 +5,24 @@ import ts from 'typescript';
 
 const source = readFileSync(new URL('../components/calendarGesture.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { gestureRange, dateKey, monday, shiftDay, timeLabel, timeMinutes, durationFromTimes, endTimeForDuration } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+const {
+  gestureRange, dateKey, monday, shiftDay, timeLabel, timeMinutes, durationFromTimes, endTimeForDuration,
+  LONG_PRESS_MS, TOUCH_SLOP_PX, requiresCalendarLongPress, exceedsTouchSlop,
+} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+
+test('touch and pen require a deliberate long press while mouse remains immediate', () => {
+  assert.equal(LONG_PRESS_MS, 450);
+  assert.equal(TOUCH_SLOP_PX, 10);
+  assert.equal(requiresCalendarLongPress('touch'), true);
+  assert.equal(requiresCalendarLongPress('pen'), true);
+  assert.equal(requiresCalendarLongPress('mouse'), false);
+});
+
+test('touch slop cancels only after movement exceeds ten pixels', () => {
+  assert.equal(exceedsTouchSlop(0, 0, 6, 8), false);
+  assert.equal(exceedsTouchSlop(0, 0, 6.1, 8), true);
+  assert.equal(exceedsTouchSlop(20, 30, 20, 41), true);
+});
 
 test('moving defaults to one minute and offers optional coarse snapping', () => {
   assert.deepEqual(gestureRange('move', 540, 60, 38), { start: 578, duration: 60 });

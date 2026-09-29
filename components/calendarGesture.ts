@@ -1,5 +1,16 @@
 export const MINUTES_PER_DAY = 1440;
 export const SNAP_MINUTES = 1;
+export const LONG_PRESS_MS = 450;
+export const TOUCH_SLOP_PX = 10;
+export const HAPTIC_MS = 15;
+export const requiresCalendarLongPress = (pointerType: string) => pointerType !== 'mouse';
+export const exceedsTouchSlop = (
+  startX: number,
+  startY: number,
+  x: number,
+  y: number,
+  slop = TOUCH_SLOP_PX,
+) => Math.hypot(x - startX, y - startY) > slop;
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 export const timeMinutes = (time: string) => {
   const [hours, minutes] = time.split(':').map(Number);
