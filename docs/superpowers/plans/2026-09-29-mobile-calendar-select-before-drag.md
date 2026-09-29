@@ -16,7 +16,7 @@
 - Modify: `components/calendarGesture.ts`
 - Modify: `tests/calendarGesture.test.mjs`
 
-- [ ] **Step 1: Write failing selection-policy tests**
+- [x] **Step 1: Write failing selection-policy tests**
 
 Replace long-press imports and tests with:
 
@@ -34,13 +34,13 @@ test('touch and pen require task selection before a gesture while mouse stays im
 
 Also assert that `LONG_PRESS_MS`, `TOUCH_SLOP_PX`, `HAPTIC_MS`, `requiresCalendarLongPress`, and `exceedsTouchSlop` are no longer exported.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/calendarGesture.test.mjs`
 
 Expected: FAIL because the selection-policy functions do not exist and long-press exports still exist.
 
-- [ ] **Step 3: Implement the minimal selection helpers**
+- [x] **Step 3: Implement the minimal selection helpers**
 
 Add:
 
@@ -55,7 +55,7 @@ export const canStartTaskGesture = (
 
 Remove the obsolete long-press constants and helpers.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/calendarGesture.test.mjs`
 
@@ -68,7 +68,7 @@ Expected: all gesture policy and time-range tests pass.
 - Delete: `tests/mobileCalendarLongPress.test.mjs`
 - Create: `tests/mobileCalendarSelection.test.mjs`
 
-- [ ] **Step 1: Write failing component regressions**
+- [x] **Step 1: Write failing component regressions**
 
 Assert that `MobileCalendar`:
 
@@ -81,19 +81,19 @@ Assert that `MobileCalendar`:
 - clears selection on blank pointer down, mode changes, display changes, navigation, task disappearance, and opening details;
 - no longer contains long-press timers, vibration, activation phases, or long-press copy.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/mobileCalendarSelection.test.mjs`
 
 Expected: FAIL because the component still implements long-press activation.
 
-- [ ] **Step 3: Implement selected task state and direct gesture gate**
+- [x] **Step 3: Implement selected task state and direct gesture gate**
 
 Add `selectedTaskId` state. In `begin`, return without capture for unselected touch/pen tasks; immediately capture and start the existing gesture for selected touch/pen tasks and all mouse tasks. Remove the timer, activation phase, haptic feedback, and touch-slop paths.
 
 Update click handling so an unselected task becomes selected, while an already selected task with no movement opens details and clears selection. Keep keyboard access direct. Clear selection on blank pointer down, view/display/navigation changes, detail opening, backlog removal, missing tasks, and unmount.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/mobileCalendarSelection.test.mjs`
 
@@ -105,21 +105,21 @@ Expected: all component selection-flow assertions pass.
 - Modify: `components/MobileCalendar.css`
 - Modify: `tests/mobileCalendarSelection.test.mjs`
 
-- [ ] **Step 1: Add failing style assertions**
+- [x] **Step 1: Add failing style assertions**
 
 Assert that default tasks retain `touch-action: pan-y`, `.mc-selected` uses `touch-action: none` with persistent highlighting, resize handles are inactive before selection and active for `.mc-selected`, `.mc-active` is reserved for stronger dragging feedback, and fine-pointer desktop media keeps resize handles directly available.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/mobileCalendarSelection.test.mjs`
 
 Expected: FAIL because the current CSS has only the long-press active state.
 
-- [ ] **Step 3: Implement selected and active styles**
+- [x] **Step 3: Implement selected and active styles**
 
 Keep `.mc-task` vertically scrollable by default. Add `.mc-selected` for persistent border/background/shadow and touch interception. Hide or weaken resize handles by default, enable them for selected tasks, and restore direct handle availability under `@media (hover:hover) and (pointer:fine)`. Keep `.mc-active` for the stronger drag transform.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/mobileCalendarSelection.test.mjs`
 
@@ -135,7 +135,7 @@ Expected: all selection and style assertions pass.
 - Verify: `tests/calendarGesture.test.mjs`
 - Verify: `tests/mobileCalendarSelection.test.mjs`
 
-- [ ] **Step 1: Run complete verification**
+- [x] **Step 1: Run complete verification**
 
 ```powershell
 npm test
@@ -146,11 +146,11 @@ git diff --check
 
 Expected: all tests pass, type checking exits 0, production build succeeds, and Git reports no whitespace errors.
 
-- [ ] **Step 2: Review requirement and repository scope**
+- [x] **Step 2: Review requirement and repository scope**
 
 Confirm first-tap selection, selected direct movement, selected resize, second-tap details, blank deselection, desktop compatibility, cancellation cleanup, and absence of long-press code. Confirm `.codex-remote-attachments/` remains untracked and unstaged.
 
-- [ ] **Step 3: Commit scoped implementation and verification records**
+- [x] **Step 3: Commit scoped implementation and verification records**
 
 ```powershell
 git add -- components/calendarGesture.ts components/MobileCalendar.tsx components/MobileCalendar.css tests/calendarGesture.test.mjs tests/mobileCalendarSelection.test.mjs tests/mobileCalendarLongPress.test.mjs docs/superpowers/plans/2026-09-29-mobile-calendar-select-before-drag.md
