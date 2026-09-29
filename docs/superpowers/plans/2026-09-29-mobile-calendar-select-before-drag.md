@@ -157,6 +157,6 @@ git add -- components/calendarGesture.ts components/MobileCalendar.tsx component
 git commit -m "fix: select mobile calendar tasks before dragging"
 ```
 
-- [ ] **Step 4: Push and verify Vercel**
+- [x] **Step 4: Push and verify Vercel**
 
 Push `main`, verify local `HEAD` equals `origin/main`, wait for production HTML to reference the newly built JavaScript and CSS assets, and confirm both assets return HTTP 200 and contain the selection-mode code/styles.
