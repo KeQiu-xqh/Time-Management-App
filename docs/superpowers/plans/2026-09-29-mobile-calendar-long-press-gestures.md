@@ -164,6 +164,6 @@ git add -- components/calendarGesture.ts components/MobileCalendar.tsx component
 git commit -m "fix: require long press for mobile calendar edits"
 ```
 
-- [ ] **Step 4: Push and verify deployment**
+- [x] **Step 4: Push and verify deployment**
 
 Run `git push origin main`, verify local `HEAD` equals `origin/main`, then confirm the Vercel production page references the new built asset. Use a mobile viewport to verify normal card-originated scrolling, long-press movement, long-press resizing, tap-to-view, and absence of console errors.
