@@ -41,7 +41,8 @@ test('task cards allow vertical scrolling before activation and explain long pre
 
   assert.match(css, /\.mc-task\{[^}]*touch-action:pan-y/s);
   assert.match(css, /\.mc-resize\{[^}]*touch-action:pan-y/s);
-  assert.match(css, /\.mc-active\{[^}]*transform:/s);
+  assert.match(css, /\.mc-active\{[^}]*touch-action:none;[^}]*transform:/s);
+  assert.match(css, /\.mc-active \.mc-resize\{[^}]*touch-action:none/s);
   assert.match(css, /\.mc-active \.mc-resize i\{[^}]*background:/s);
   assert.match(source, /轻点查看，长按调整/);
   assert.match(source, /手机端长按任务后拖动改时间/);
