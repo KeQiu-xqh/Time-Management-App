@@ -5,23 +5,26 @@ import ts from 'typescript';
 
 const source = readFileSync(new URL('../components/calendarGesture.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+const gestureModule = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 const {
   gestureRange, dateKey, monday, shiftDay, timeLabel, timeMinutes, durationFromTimes, endTimeForDuration,
-  LONG_PRESS_MS, TOUCH_SLOP_PX, requiresCalendarLongPress, exceedsTouchSlop,
-} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
+  requiresTaskSelection, canStartTaskGesture,
+} = gestureModule;
 
-test('touch and pen require a deliberate long press while mouse remains immediate', () => {
-  assert.equal(LONG_PRESS_MS, 450);
-  assert.equal(TOUCH_SLOP_PX, 10);
-  assert.equal(requiresCalendarLongPress('touch'), true);
-  assert.equal(requiresCalendarLongPress('pen'), true);
-  assert.equal(requiresCalendarLongPress('mouse'), false);
+test('touch and pen require task selection before a gesture while mouse stays immediate', () => {
+  assert.equal(requiresTaskSelection('touch'), true);
+  assert.equal(requiresTaskSelection('pen'), true);
+  assert.equal(requiresTaskSelection('mouse'), false);
+  assert.equal(canStartTaskGesture('touch', null, 'task-1'), false);
+  assert.equal(canStartTaskGesture('touch', 'task-1', 'task-1'), true);
+  assert.equal(canStartTaskGesture('pen', 'task-2', 'task-1'), false);
+  assert.equal(canStartTaskGesture('mouse', null, 'task-1'), true);
 });
 
-test('touch slop cancels only after movement exceeds ten pixels', () => {
-  assert.equal(exceedsTouchSlop(0, 0, 6, 8), false);
-  assert.equal(exceedsTouchSlop(0, 0, 6.1, 8), true);
-  assert.equal(exceedsTouchSlop(20, 30, 20, 41), true);
+test('obsolete long-press policy is not exported', () => {
+  for (const name of ['LONG_PRESS_MS', 'TOUCH_SLOP_PX', 'HAPTIC_MS', 'requiresCalendarLongPress', 'exceedsTouchSlop']) {
+    assert.equal(gestureModule[name], undefined);
+  }
 });
 
 test('moving defaults to one minute and offers optional coarse snapping', () => {
