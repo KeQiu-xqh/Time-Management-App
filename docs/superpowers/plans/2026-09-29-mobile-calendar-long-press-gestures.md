@@ -16,7 +16,7 @@
 - Modify: `tests/calendarGesture.test.mjs`
 - Modify: `components/calendarGesture.ts`
 
-- [ ] **Step 1: Write failing policy tests**
+- [x] **Step 1: Write failing policy tests**
 
 Import `LONG_PRESS_MS`, `TOUCH_SLOP_PX`, `requiresCalendarLongPress`, and `exceedsTouchSlop`, then assert:
 
@@ -36,13 +36,13 @@ test('touch slop cancels only after movement exceeds ten pixels', () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/calendarGesture.test.mjs`
 
 Expected: FAIL because the four gesture-policy exports do not exist.
 
-- [ ] **Step 3: Implement the minimal policy helpers**
+- [x] **Step 3: Implement the minimal policy helpers**
 
 Add to `components/calendarGesture.ts`:
 
@@ -55,7 +55,7 @@ export const exceedsTouchSlop = (startX: number, startY: number, x: number, y: n
   Math.hypot(x - startX, y - startY) > slop;
 ```
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/calendarGesture.test.mjs`
 
@@ -67,17 +67,17 @@ Expected: all calendar gesture tests pass.
 - Modify: `components/MobileCalendar.tsx`
 - Create: `tests/mobileCalendarLongPress.test.mjs`
 
-- [ ] **Step 1: Write a failing structural regression test**
+- [x] **Step 1: Write a failing structural regression test**
 
 Read `MobileCalendar.tsx` and assert that it imports the long-press helpers, stores a gesture phase, starts a `window.setTimeout` using `LONG_PRESS_MS`, cancels pending input through `exceedsTouchSlop`, captures the pointer only inside activation, calls `navigator.vibrate(HAPTIC_MS)` defensively, and prevents default only for an active gesture. Also assert that the old unconditional pointer capture in `begin` is absent.
 
-- [ ] **Step 2: Run the structural test and verify RED**
+- [x] **Step 2: Run the structural test and verify RED**
 
 Run: `node --import tsx --test tests/mobileCalendarLongPress.test.mjs`
 
 Expected: FAIL because `MobileCalendar` still captures every pointer immediately and has no pending phase.
 
-- [ ] **Step 3: Implement the pending/active/cancelled state machine**
+- [x] **Step 3: Implement the pending/active/cancelled state machine**
 
 Extend the gesture object with:
 
@@ -98,7 +98,7 @@ Add a timer ref and helpers that:
 
 Keep mouse input on the immediate activation path. A pending touch `pointerup` is left for the existing click handler; an active long press without movement suppresses the click and does not save.
 
-- [ ] **Step 4: Run the new test and verify GREEN**
+- [x] **Step 4: Run the new test and verify GREEN**
 
 Run: `node --import tsx --test tests/mobileCalendarLongPress.test.mjs`
 
@@ -111,21 +111,21 @@ Expected: all long-press structural regressions pass.
 - Modify: `components/MobileCalendar.tsx`
 - Modify: `tests/mobileCalendarLongPress.test.mjs`
 
-- [ ] **Step 1: Add failing CSS and accessibility assertions**
+- [x] **Step 1: Add failing CSS and accessibility assertions**
 
 Assert that default `.mc-task` and `.mc-resize` use `touch-action: pan-y`, the active task uses a lifted transform/highlight, the task label says “轻点查看，长按调整”, and the hidden usage instruction describes long press.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `node --import tsx --test tests/mobileCalendarLongPress.test.mjs`
 
 Expected: FAIL because task cards currently use `touch-action: none` and old drag wording.
 
-- [ ] **Step 3: Implement scrolling and feedback styles**
+- [x] **Step 3: Implement scrolling and feedback styles**
 
 Change the default task and resize handle touch action to vertical panning, retain disabled text selection, and give `.mc-active` a small scale/translation, stronger shadow, and highlighted resize affordances. Update accessible task labels and the screen-reader-only instruction to state that touch users long press before adjusting.
 
-- [ ] **Step 4: Run the focused test and verify GREEN**
+- [x] **Step 4: Run the focused test and verify GREEN**
 
 Run: `node --import tsx --test tests/mobileCalendarLongPress.test.mjs`
 
@@ -141,7 +141,7 @@ Expected: all long-press tests pass.
 - Verify: `tests/calendarGesture.test.mjs`
 - Verify: `tests/mobileCalendarLongPress.test.mjs`
 
-- [ ] **Step 1: Run all automated verification**
+- [x] **Step 1: Run all automated verification**
 
 Run:
 
@@ -153,11 +153,11 @@ npm run build
 
 Expected: all tests pass, TypeScript exits 0, and the Vite production build succeeds.
 
-- [ ] **Step 2: Review requirement coverage and Git scope**
+- [x] **Step 2: Review requirement coverage and Git scope**
 
 Confirm the implementation covers scroll cancellation, body movement, both resize edges, activation feedback, cleanup, mouse compatibility, and accessible instructions. Run `git diff --check` and verify `.codex-remote-attachments/` is still untracked and unstaged.
 
-- [ ] **Step 3: Commit scoped files**
+- [x] **Step 3: Commit scoped files**
 
 ```powershell
 git add -- components/calendarGesture.ts components/MobileCalendar.tsx components/MobileCalendar.css tests/calendarGesture.test.mjs tests/mobileCalendarLongPress.test.mjs docs/superpowers/plans/2026-09-29-mobile-calendar-long-press-gestures.md
