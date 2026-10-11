@@ -43,7 +43,10 @@ const relay = async (request: Request) => {
     const value = upstream.headers.get(name);
     if (value) responseHeaders.set(name, value);
   }
-  return new Response(responseBody, { status: upstream.status, headers: responseHeaders });
+  return new Response(upstream.status === 204 ? null : responseBody, {
+    status: upstream.status,
+    headers: responseHeaders
+  });
 };
 
 export default { fetch: relay };
