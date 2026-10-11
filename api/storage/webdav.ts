@@ -2,10 +2,20 @@ import { assertWebDavTarget } from '../../server/webdavTarget.js';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, If-Match, If-None-Match, X-PlanFlow-WebDAV-Target, X-PlanFlow-WebDAV-Authorization'
+};
+
 const jsonError = (message: string, status: number) =>
-  Response.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store' } });
+  Response.json({ error: message }, {
+    status,
+    headers: { 'Cache-Control': 'no-store', ...corsHeaders }
+  });
 
 const relay = async (request: Request) => {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
   if (process.env.WEBDAV_PROXY_ENABLED !== 'true') return jsonError('WebDAV 安全转发未启用', 503);
   if (request.method !== 'GET' && request.method !== 'PUT') return jsonError('不支持的请求方法', 405);
   const targetValue = request.headers.get('X-PlanFlow-WebDAV-Target');
@@ -38,7 +48,7 @@ const relay = async (request: Request) => {
   const responseBody = await upstream.arrayBuffer();
   if (responseBody.byteLength > MAX_BYTES) return jsonError('远端同步文件超过 2 MiB 限制', 413);
 
-  const responseHeaders = new Headers({ 'Cache-Control': 'no-store' });
+  const responseHeaders = new Headers({ 'Cache-Control': 'no-store', ...corsHeaders });
   for (const name of ['ETag', 'Retry-After', 'Content-Type']) {
     const value = upstream.headers.get(name);
     if (value) responseHeaders.set(name, value);

@@ -8,6 +8,7 @@ export interface WebDavProviderOptions {
   username: string;
   appPassword: string;
   useRelay?: boolean;
+  relayEndpoint?: string;
   fetch?: FetchBoundary;
 }
 
@@ -22,6 +23,7 @@ export class WebDavProvider implements StorageProvider {
   private readonly endpoint: string;
   private readonly authorization: string;
   private readonly useRelay: boolean;
+  private readonly relayEndpoint: string;
   private readonly fetcher: FetchBoundary;
 
   constructor(options: WebDavProviderOptions) {
@@ -30,6 +32,7 @@ export class WebDavProvider implements StorageProvider {
     this.endpoint = endpoint.toString();
     this.authorization = basicAuthorization(options.username, options.appPassword);
     this.useRelay = options.useRelay ?? false;
+    this.relayEndpoint = options.relayEndpoint ?? '/api/storage/webdav';
     this.fetcher = options.fetch ?? fetch;
   }
 
@@ -37,7 +40,7 @@ export class WebDavProvider implements StorageProvider {
     const headers = new Headers();
     let url = this.endpoint;
     if (this.useRelay) {
-      url = '/api/storage/webdav';
+      url = this.relayEndpoint;
       headers.set('X-PlanFlow-WebDAV-Target', this.endpoint);
       headers.set('X-PlanFlow-WebDAV-Authorization', this.authorization);
     } else {

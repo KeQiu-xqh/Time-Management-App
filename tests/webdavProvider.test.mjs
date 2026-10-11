@@ -42,6 +42,7 @@ test('WebDAV relay keeps target and credentials out of the URL', async () => {
     username: 'user',
     appPassword: 'password',
     useRelay: true,
+    relayEndpoint: 'https://relay.example/api/storage/webdav',
     fetch: async (url, init) => {
       request = { url, init };
       return response('', { status: 404 });
@@ -49,7 +50,7 @@ test('WebDAV relay keeps target and credentials out of the URL', async () => {
   });
 
   await provider.read();
-  assert.equal(request.url, '/api/storage/webdav');
+  assert.equal(request.url, 'https://relay.example/api/storage/webdav');
   assert.equal(request.init.headers.get('X-PlanFlow-WebDAV-Target'), 'https://dav.example.com/private/file');
   assert.equal(request.url.includes('password'), false);
 });

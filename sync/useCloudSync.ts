@@ -27,6 +27,8 @@ const deviceId = () => {
 
 const clientId = () => import.meta.env.VITE_ONEDRIVE_CLIENT_ID?.trim() ?? '';
 const redirectUri = () => import.meta.env.VITE_ONEDRIVE_REDIRECT_URI?.trim() || `${window.location.origin}${window.location.pathname}`;
+const webdavRelayEndpoint = () => import.meta.env.VITE_WEBDAV_RELAY_URL?.trim()
+  || 'https://time-management-app-ashen.vercel.app/api/storage/webdav';
 
 export function useCloudSync(
   snapshot: PlanSnapshot,
@@ -103,7 +105,8 @@ export function useCloudSync(
         endpoint: webdavEndpoint,
         username: webdavUsername,
         appPassword: webdavPassword,
-        useRelay: webdavUseRelay
+        useRelay: webdavUseRelay,
+        relayEndpoint: webdavRelayEndpoint()
       });
     }
     throw new StorageProviderError('invalid_configuration', '请先选择并连接同步存储');
